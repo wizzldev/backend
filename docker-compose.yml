@@ -1,0 +1,18 @@
+version: '3'
+services:
+  database:
+    image: 'mysql:latest'
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'api'
+      MYSQL_ROOT_PASSWORD: 'password'
+  redis:
+    image: 'redis:latest'
+  api:
+    build: .
+    restart: always
+    depends_on:
+      - database
+      - redis
+    ports:
+      - '3000:3000'
