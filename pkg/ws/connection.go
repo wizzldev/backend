@@ -29,6 +29,7 @@ func (c *Connection) Init() {
 func (c *Connection) Disconnect() {
 	c.Connected = false
 	_ = c.Conn.Close()
+	WebSocket[c.serverID].Remove(c)
 }
 
 func (c *Connection) ReadLoop() {

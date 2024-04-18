@@ -59,3 +59,7 @@ func (s *Server) BroadcastToUsers(userIDs []uint, m Message) {
 		}
 	}
 }
+
+func (s *Server) Remove(c *Connection) {
+	s.Pool = utils.RemoveFromSlice(s.Pool, c)
+}
