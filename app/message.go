@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/wizzldev/chat/app/events"
-	"github.com/wizzldev/chat/database"
 	"github.com/wizzldev/chat/database/models"
+	"github.com/wizzldev/chat/database/rdb"
 	"github.com/wizzldev/chat/pkg/configs"
 	"github.com/wizzldev/chat/pkg/repository"
 	"github.com/wizzldev/chat/pkg/ws"
@@ -38,8 +38,7 @@ func MessageActionHandler(s *ws.Server, conn *ws.Connection, userID uint, data [
 		return err
 	}
 
-	var msg *ws.ClientMessage
-	err = msg.Make(data, conn)
+	msg, err := ws.NewClientMessage(data, conn)
 	if err != nil {
 		return err
 	}
@@ -69,12 +68,12 @@ func MessageActionHandler(s *ws.Server, conn *ws.Connection, userID uint, data [
 func getCachedUser(userID uint) (*models.User, error) {
 	key := fmt.Sprintf("chat-user.%v", userID)
 
-	err := database.RedisClient.Exists(ctx, key).Err()
+	err := rdb.RedisClient.Exists(ctx, key).Err()
 	if err != nil {
 		return saveDBUser(userID, key)
 	}
 
-	userStr, err := database.RedisClient.Get(ctx, key).Result()
+	userStr, err := rdb.RedisClient.Get(ctx, key).Result()
 	if err != nil {
 		return saveDBUser(userID, key)
 	}
@@ -94,18 +93,18 @@ func saveDBUser(userID uint, key string) (*models.User, error) {
 	if err != nil {
 		return nil, err
 	}
-	database.RedisClient.Set(ctx, key, data, time.Minute*20)
+	rdb.RedisClient.Set(ctx, key, data, time.Minute*20)
 	return user, nil
 }
 
 func getCachedGroupUserIDs(groupID string) []uint {
 	key := fmt.Sprintf("chat-group.%v.user-ids", groupID)
-	err := database.RedisClient.Exists(ctx, key).Err()
+	err := rdb.RedisClient.Exists(ctx, key).Err()
 	if err != nil {
 		return saveDBGroupUsers(groupID, key)
 	}
 
-	gIDsStr, err := database.RedisClient.Get(ctx, key).Result()
+	gIDsStr, err := rdb.RedisClient.Get(ctx, key).Result()
 	if err != nil {
 		return saveDBGroupUsers(groupID, key)
 	}
@@ -133,6 +132,6 @@ func saveDBGroupUsers(groupID string, key string) []uint {
 		return gIDs
 	}
 
-	database.RedisClient.Set(ctx, key, data, time.Minute*20)
+	rdb.RedisClient.Set(ctx, key, data, time.Minute*20)
 	return gIDs
 }

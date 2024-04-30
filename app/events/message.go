@@ -4,6 +4,7 @@ import (
 	"github.com/wizzldev/chat/database"
 	"github.com/wizzldev/chat/database/models"
 	"github.com/wizzldev/chat/pkg/ws"
+	"slices"
 )
 
 type ChatMessage struct {
@@ -28,7 +29,7 @@ func DispatchMessage(wsID string, userIDs []uint, gID uint, user *models.User, m
 	}
 	database.DB.Create(&message)
 
-	ws.WebSocket[wsID].BroadcastToUsers(userIDs, ws.Message{
+	sentTo := ws.WebSocket[wsID].BroadcastToUsers(userIDs, ws.Message{
 		Event: "message",
 		Data: ChatMessage{
 			MessageID: message.ID,
@@ -38,4 +39,14 @@ func DispatchMessage(wsID string, userIDs []uint, gID uint, user *models.User, m
 			DataJSON:  message.DataJSON,
 		},
 	})
+
+	if len(sentTo) < len(userIDs) {
+		shouldFetchIDs := make([]uint, len(userIDs)-len(sentTo))
+		for _, id := range userIDs {
+			if !slices.Contains(sentTo, id) {
+				shouldFetchIDs = append(shouldFetchIDs, id)
+			}
+		}
+		go ShouldFetch(shouldFetchIDs, gID)
+	}
 }

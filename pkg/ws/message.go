@@ -1,7 +1,6 @@
 package ws
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/wizzldev/chat/pkg/utils"
@@ -20,18 +19,19 @@ type ClientMessage struct {
 	DataJSON string `json:"data_json" validate:"required,json,max=55"`
 }
 
-func (c *ClientMessage) Make(data []byte, conn *Connection) error {
-	err := json.NewDecoder(bytes.NewReader(data)).Decode(c)
+func NewClientMessage(data []byte, conn *Connection) (*ClientMessage, error) {
+	var c ClientMessage
+	err := json.Unmarshal(data, &c)
 	if err != nil {
-		return fmt.Errorf("failed to decode body: %w", err)
+		return nil, fmt.Errorf("failed to decode body: %w", err)
 	}
 
-	if err := utils.Validator.Struct(c); err != nil {
+	if err := utils.Validator.Struct(&c); err != nil {
 		go conn.Send(Message{
 			Event: "error",
 			Data:  err.Error(),
 		})
-		return err
+		return nil, err
 	}
-	return nil
+	return &c, nil
 }

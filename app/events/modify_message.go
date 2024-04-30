@@ -1,5 +1,0 @@
-package events
-
-func DispatchModifyMessage() {
-
-}

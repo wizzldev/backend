@@ -1,4 +1,4 @@
-package database
+package rdb
 
 import (
 	"github.com/gofiber/storage/redis/v3"

@@ -2,6 +2,9 @@
 env:
 	cp .env.example .env
 
+buildID:
+	git show -s --format='{"build": "%h", "date": "%cD", "author": "%an" }' > ./pkg/configs/build.json
+
 # handler makes a new handler inside the handlers folder to speed up things
 handler:
 	@if [ -z "$(name)" ]; then \
