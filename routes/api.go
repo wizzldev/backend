@@ -9,8 +9,8 @@ import (
 
 func RegisterAPI(r fiber.Router) {
 	{
-		r.Post("/login", requests.Use(&requests.Login{}), handlers.Auth.Login)
-		r.Post("/register", requests.Use(&requests.Register{}), handlers.Auth.Register)
+		r.Post("/login", requests.Use[requests.Login](), handlers.Auth.Login)
+		r.Post("/register", requests.Use[requests.Register](), handlers.Auth.Register)
 	}
 
 	auth := r.Group("/", middlewares.Auth)
@@ -22,7 +22,7 @@ func RegisterAPI(r fiber.Router) {
 	chat := auth.Group("/chat")
 	{
 		chat.Get("/private/:id", handlers.Chat.PrivateMessage)
-		chat.Post("/search", requests.Use(&requests.SearchContacts{}), handlers.Chat.Search)
+		chat.Post("/search", requests.Use[requests.SearchContacts](), handlers.Chat.Search)
 	}
 
 	chat.Post("/group", handlers.Group.New)

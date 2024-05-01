@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/wizzldev/chat/database"
 	"github.com/wizzldev/chat/pkg/configs"
+	"github.com/wizzldev/chat/pkg/middlewares"
 	"github.com/wizzldev/chat/routes"
 	"log"
 )
@@ -25,6 +26,7 @@ func main() {
 	app.Static("/static", "./public")
 
 	app.Use(recover.New())
+	app.Use(middlewares.CORS())
 
 	if configs.Env.Debug {
 		app.Use(logger.New())
@@ -32,6 +34,7 @@ func main() {
 
 	routes.RegisterAPI(app.Group("/api"))
 	routes.WS(app)
+
 	app.Use(routes.HandleNotFoundError)
 
 	log.Fatal(app.Listen(configs.Env.ServerPort))

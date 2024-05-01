@@ -5,7 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func HandleNotFoundError(*fiber.Ctx) error {
+func HandleNotFoundError(c *fiber.Ctx) error {
 	return fiber.NewError(fiber.StatusNotFound, "This resource could not be found")
 }
 

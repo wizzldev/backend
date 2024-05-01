@@ -62,7 +62,7 @@ func (me) UploadProfileImage(c *fiber.Ctx) error {
 		_ = os.Remove(imgPath)
 	}
 
-	user.ImageURL = fmt.Sprintf("{api}/static/images/%s", imageName)
+	user.ImageURL = fmt.Sprintf("{cdn}/static/images/%s", imageName)
 	database.DB.Save(user)
 
 	return c.JSON(user)

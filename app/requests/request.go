@@ -5,8 +5,8 @@ import (
 	"github.com/wizzldev/chat/pkg/utils"
 )
 
-func Use(r any) fiber.Handler {
+func Use[T any]() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		return utils.Validate(r, c)
+		return utils.Validate[T](c)
 	}
 }
