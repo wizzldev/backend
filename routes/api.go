@@ -21,8 +21,14 @@ func RegisterAPI(r fiber.Router) {
 
 	chat := auth.Group("/chat")
 	{
-		chat.Get("/private/:id", handlers.Chat.PrivateMessage)
+		chat.Get("/contacts", handlers.Chat.Contacts)
+		chat.Get("/private/:id<int>", handlers.Chat.PrivateMessage)
 		chat.Post("/search", requests.Use[requests.SearchContacts](), handlers.Chat.Search)
+	}
+
+	msg := chat.Group("/:id<int>", middlewares.GroupAccess("id"))
+	{
+		msg.Get("/", handlers.Chat.Find)
 	}
 
 	chat.Post("/group", handlers.Group.New)

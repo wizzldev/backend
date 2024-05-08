@@ -7,10 +7,15 @@ type HasMessageSender struct {
 
 type HasGroup struct {
 	GroupID uint  `json:"-"`
-	Group   Group `json:"receiver" gorm:"constraint:OnDelete:CASCADE;foreignKey:GroupID"`
+	Group   Group `json:"receiver,omitempty" gorm:"constraint:OnDelete:CASCADE;foreignKey:GroupID"`
 }
 
 type HasUser struct {
 	UserID uint `json:"-"`
 	User   User `json:"sender" gorm:"constraint:OnDelete:CASCADE;foreignKey:UserID"`
+}
+
+type GroupUser struct {
+	GroupID uint `gorm:"group_id"`
+	UserID  uint `gorm:"user_id"`
 }

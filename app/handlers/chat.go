@@ -16,6 +16,12 @@ type chat struct{}
 
 var Chat chat
 
+func (chat) Contacts(c *fiber.Ctx) error {
+	page := c.QueryInt("page", 1)
+	data := repository.Group.GetContactsForUser(authUserID(c), page)
+	return c.JSON(data)
+}
+
 func (chat) PrivateMessage(c *fiber.Ctx) error {
 	requestedUserID, err := c.ParamsInt("id", 0)
 	userID := uint(requestedUserID)
@@ -67,6 +73,20 @@ func getPM(id uint) fiber.Map {
 	return fiber.Map{
 		"pm_id": g.ID,
 	}
+}
+
+func (chat) Find(c *fiber.Ctx) error {
+	id, err := c.ParamsInt("id", 0)
+	if err != nil {
+		return err
+	}
+
+	g := repository.Group.GetChatUser(uint(id), authUserID(c))
+	latestMessages := repository.Message.Latest(uint(id))
+	return c.JSON(fiber.Map{
+		"group":    g,
+		"messages": latestMessages,
+	})
 }
 
 func (chat) Connect(c *fiber.Ctx) error {
