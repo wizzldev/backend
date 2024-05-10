@@ -8,6 +8,6 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o chat
+RUN go build -o wizzl
 
-CMD ["./chat"]
+CMD ["./wizzl", "-"]

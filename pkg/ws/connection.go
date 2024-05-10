@@ -1,6 +1,7 @@
 package ws
 
 import (
+	"fmt"
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2/log"
 	"github.com/wizzldev/chat/pkg/configs"
@@ -29,6 +30,8 @@ func (c *Connection) Init() {
 func (c *Connection) Disconnect() {
 	c.Connected = false
 	_ = c.Conn.Close()
+	WebSocket[c.serverID].Remove(c)
+	fmt.Printf("Disconnected from server %s: %s \n", c.serverID, c.IP())
 }
 
 func (c *Connection) ReadLoop() {
@@ -62,6 +65,7 @@ func (c *Connection) ReadLoop() {
 			continue
 		}
 	}
+	c.Disconnect()
 }
 
 func (c *Connection) Send(m Message) {

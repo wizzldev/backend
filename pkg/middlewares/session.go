@@ -4,7 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
 	"github.com/gofiber/fiber/v2/utils"
-	"github.com/wizzldev/chat/database"
+	"github.com/wizzldev/chat/database/rdb"
 	"github.com/wizzldev/chat/pkg/configs"
 	utils2 "github.com/wizzldev/chat/pkg/utils"
 	"strings"
@@ -17,7 +17,7 @@ var store = session.New(session.Config{
 		return "bearer " + utils.UUIDv4()
 	},
 	KeyLookup: "header:Authorization",
-	Storage:   database.Redis,
+	Storage:   rdb.Redis,
 })
 
 func Session(c *fiber.Ctx) (*session.Session, error) {

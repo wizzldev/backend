@@ -1,27 +1,20 @@
 package app
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"github.com/wizzldev/chat/app/events"
-	"github.com/wizzldev/chat/database"
 	"github.com/wizzldev/chat/database/models"
+	"github.com/wizzldev/chat/database/rdb"
 	"github.com/wizzldev/chat/pkg/configs"
 	"github.com/wizzldev/chat/pkg/repository"
-	"github.com/wizzldev/chat/pkg/utils"
 	"github.com/wizzldev/chat/pkg/ws"
 	"strconv"
 	"strings"
 	"time"
 )
-
-type Message struct {
-	Content  string `json:"content" validate:"required,min=1,max=300"`
-	Type     string `json:"type" validate:"required,eq=message|eq=colored_message"`
-	DataJSON string `json:"data_json" validate:"required,json,max=55"`
-}
 
 var ctx = context.Background()
 
@@ -45,41 +38,27 @@ func MessageActionHandler(s *ws.Server, conn *ws.Connection, userID uint, data [
 		return err
 	}
 
-	var msg Message
-	err = json.NewDecoder(bytes.NewReader(data)).Decode(&msg)
+	msg, err := ws.NewClientMessage(data, conn)
 	if err != nil {
-		return fmt.Errorf("failed to decode body: %w", err)
-	}
-
-	if err = utils.Validator.Struct(msg); err != nil {
-		go conn.Send(ws.Message{
-			Event: "error",
-			Data:  err.Error(),
-		})
 		return err
 	}
 
 	switch msg.Type {
 	case "message":
-		message := models.Message{
-			HasGroup: models.HasGroup{
-				GroupID: uint(gID),
+		events.DispatchMessage(s.ID, getCachedGroupUserIDs(s.ID), uint(gID), user, msg)
+	case "leave":
+		conn.Send(ws.Message{
+			Event: "notification",
+			Data: fiber.Map{
+				"type":    "info",
+				"message": "You've been disconnected from this chat.",
 			},
-			HasMessageSender: models.HasMessageSender{
-				SenderID: userID,
-			},
-			Content:  msg.Content,
-			Type:     msg.Type,
-			DataJSON: msg.DataJSON,
-		}
-		database.DB.Create(&message)
-
-		events.DispatchMessage(s.ID, getCachedGroupUserIDs(s.ID), events.ChatMessage{
-			MessageID: message.ID,
-			Sender:    *user,
-			Content:   message.Content,
-			Type:      message.Type,
-			DataJSON:  msg.DataJSON,
+		})
+		conn.Disconnect()
+	default:
+		conn.Send(ws.Message{
+			Event: "error",
+			Data:  fmt.Sprintf("Unknown message type: %s", msg.Type),
 		})
 	}
 
@@ -89,12 +68,12 @@ func MessageActionHandler(s *ws.Server, conn *ws.Connection, userID uint, data [
 func getCachedUser(userID uint) (*models.User, error) {
 	key := fmt.Sprintf("chat-user.%v", userID)
 
-	err := database.RedisClient.Exists(ctx, key).Err()
+	err := rdb.RedisClient.Exists(ctx, key).Err()
 	if err != nil {
 		return saveDBUser(userID, key)
 	}
 
-	userStr, err := database.RedisClient.Get(ctx, key).Result()
+	userStr, err := rdb.RedisClient.Get(ctx, key).Result()
 	if err != nil {
 		return saveDBUser(userID, key)
 	}
@@ -114,18 +93,18 @@ func saveDBUser(userID uint, key string) (*models.User, error) {
 	if err != nil {
 		return nil, err
 	}
-	database.RedisClient.Set(ctx, key, data, time.Minute*20)
+	rdb.RedisClient.Set(ctx, key, data, time.Minute*20)
 	return user, nil
 }
 
 func getCachedGroupUserIDs(groupID string) []uint {
 	key := fmt.Sprintf("chat-group.%v.user-ids", groupID)
-	err := database.RedisClient.Exists(ctx, key).Err()
+	err := rdb.RedisClient.Exists(ctx, key).Err()
 	if err != nil {
 		return saveDBGroupUsers(groupID, key)
 	}
 
-	gIDsStr, err := database.RedisClient.Get(ctx, key).Result()
+	gIDsStr, err := rdb.RedisClient.Get(ctx, key).Result()
 	if err != nil {
 		return saveDBGroupUsers(groupID, key)
 	}
@@ -153,6 +132,6 @@ func saveDBGroupUsers(groupID string, key string) []uint {
 		return gIDs
 	}
 
-	database.RedisClient.Set(ctx, key, data, time.Minute*20)
+	rdb.RedisClient.Set(ctx, key, data, time.Minute*20)
 	return gIDs
 }

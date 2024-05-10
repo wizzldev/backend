@@ -1,7 +1,9 @@
 package ws
 
 import (
+	"fmt"
 	"github.com/gofiber/contrib/websocket"
+	"github.com/wizzldev/chat/pkg/configs"
 	"github.com/wizzldev/chat/pkg/utils"
 	"slices"
 )
@@ -16,6 +18,17 @@ type Server struct {
 }
 
 type BroadcastFunc func(*Connection) bool
+
+func Default() *Server {
+	server, ok := WebSocket[utils.DefaultWSPool]
+
+	if !ok {
+		server = NewServer(utils.DefaultWSPool)
+		WebSocket[utils.DefaultWSPool] = server
+	}
+
+	return server
+}
 
 func NewServer(id string) *Server {
 	return &Server{
@@ -33,6 +46,11 @@ func (s *Server) AddConnection(ws *websocket.Conn) {
 		"established",
 	})
 	s.Pool = append(s.Pool, conn)
+
+	if configs.Env.Debug {
+		fmt.Printf("[WS] New connection, UserID: %v, IP: %v", conn.UserID, conn.IP())
+	}
+
 	conn.ReadLoop()
 }
 
@@ -52,10 +70,17 @@ func (s *Server) BroadcastFunc(f BroadcastFunc, m Message) {
 	}
 }
 
-func (s *Server) BroadcastToUsers(userIDs []uint, m Message) {
+func (s *Server) BroadcastToUsers(userIDs []uint, m Message) []uint {
+	var sentTo []uint
 	for _, conn := range s.Pool {
 		if slices.Contains(userIDs, conn.UserID) {
 			conn.Send(m)
+			sentTo = append(sentTo, conn.UserID)
 		}
 	}
+	return sentTo
+}
+
+func (s *Server) Remove(c *Connection) {
+	s.Pool = utils.RemoveFromSlice(s.Pool, c)
 }

@@ -5,4 +5,6 @@ const (
 
 	LocalAuthUser   = "authUser"
 	LocalAuthUserID = "authUserId"
+
+	DefaultWSPool = "ws.default-server-pool"
 )
