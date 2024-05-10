@@ -1,21 +1,27 @@
 package events
 
 import (
+	"fmt"
 	"github.com/wizzldev/chat/database"
 	"github.com/wizzldev/chat/database/models"
 	"github.com/wizzldev/chat/pkg/ws"
 	"slices"
+	"time"
 )
 
 type ChatMessage struct {
-	MessageID uint        `json:"message_id"`
+	MessageID uint        `json:"id"`
 	Sender    models.User `json:"sender"`
 	Content   string      `json:"content"`
 	Type      string      `json:"type"`
 	DataJSON  string      `json:"data_json"`
+	CreatedAt time.Time   `json:"created_at"`
+	UpdatedAt time.Time   `json:"updated_at"`
 }
 
 func DispatchMessage(wsID string, userIDs []uint, gID uint, user *models.User, msg *ws.ClientMessage) {
+	fmt.Println("message send to:", userIDs)
+
 	message := models.Message{
 		HasGroup: models.HasGroup{
 			GroupID: gID,
@@ -37,11 +43,14 @@ func DispatchMessage(wsID string, userIDs []uint, gID uint, user *models.User, m
 			Content:   message.Content,
 			Type:      message.Type,
 			DataJSON:  message.DataJSON,
+			CreatedAt: message.CreatedAt,
+			UpdatedAt: message.UpdatedAt,
 		},
 	})
 
+	fmt.Println("s f", len(sentTo) < len(userIDs))
 	if len(sentTo) < len(userIDs) {
-		shouldFetchIDs := make([]uint, len(userIDs)-len(sentTo))
+		var shouldFetchIDs []uint
 		for _, id := range userIDs {
 			if !slices.Contains(sentTo, id) {
 				shouldFetchIDs = append(shouldFetchIDs, id)

@@ -39,8 +39,8 @@ func Validate[T any](c *fiber.Ctx) error {
 			var el IError
 			pattern := regexp.MustCompile("(\\p{Lu}+\\P{Lu}*)")
 			p := pattern.ReplaceAllString(fieldError.Field(), "${1}_")
-			p, _ = strings.CutSuffix(strings.ToLower(fieldError.Field()), "_")
-			el.Field = p
+			p = strings.TrimRight(p, "_")
+			el.Field = strings.ToLower(p)
 			el.Tag = fieldError.Tag()
 			el.Value = fieldError.Param()
 			errs = append(errs, &el)

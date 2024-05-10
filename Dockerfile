@@ -10,4 +10,4 @@ COPY . .
 
 RUN go build -o wizzl
 
-CMD ["./wizzl"]
+CMD ["./wizzl", "-"]

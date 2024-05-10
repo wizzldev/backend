@@ -11,6 +11,7 @@ func RegisterAPI(r fiber.Router) {
 	{
 		r.Post("/login", requests.Use[requests.Login](), handlers.Auth.Login)
 		r.Post("/register", requests.Use[requests.Register](), handlers.Auth.Register)
+		r.Get("/logout", handlers.Auth.Logout)
 	}
 
 	auth := r.Group("/", middlewares.Auth)

@@ -14,6 +14,7 @@ func (message) Latest(gID uint) *[]models.Message {
 
 	_ = database.DB.Model(&models.Message{}).
 		Preload("Sender").
+		Preload("Reply.Sender").
 		Where("group_id = ?", gID).
 		Order("created_at desc").
 		Limit(30).Find(&messages).Error

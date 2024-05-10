@@ -119,6 +119,8 @@ func (group) GetContactsForUser(userID uint, page int) *[]Contact {
 	order by message_created_at desc limit 15 offset `+strconv.Itoa(offset)+`
 	`, userID).Find(&data).Error
 
+	fmt.Println(data)
+
 	var privateMessageIDs []uint
 	for _, v := range data {
 		if v.IsPrivateMessage {

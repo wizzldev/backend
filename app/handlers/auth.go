@@ -69,3 +69,13 @@ func (auth) Register(c *fiber.Ctx) error {
 		"message": "Please verify your email before login",
 	})
 }
+
+func (auth) Logout(c *fiber.Ctx) error {
+	sess, err := middlewares.Session(c)
+
+	if err != nil {
+		return err
+	}
+
+	return sess.Destroy()
+}
