@@ -203,7 +203,7 @@ func (group) GetChatUser(chatID uint, userID uint) *models.Group {
 		inner join users on users.id = group_user.user_id
 		where group_id = ? and users.id != ? limit 1
 		`, data.ID, userID).Scan(&user).Error
-		data.ImageURL = user.ImageURL
+		data.ImageURL = &user.ImageURL
 		data.Name = fmt.Sprintf("%s %s", user.FirstName, user.LastName)
 	}
 

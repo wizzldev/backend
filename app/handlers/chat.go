@@ -42,7 +42,6 @@ func (chat) PrivateMessage(c *fiber.Ctx) error {
 	}
 
 	group := models.Group{
-		Name:     nil,
 		ImageURL: nil,
 		Users: []*models.User{
 			{

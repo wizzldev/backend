@@ -10,6 +10,6 @@ type Group struct {
 	Users            []*User        `json:"members,omitempty" gorm:"constraint:OnDelete:CASCADE;many2many:group_user"`
 	MemberRoles      []*MemberRole  `json:"member_roles,omitempty" gorm:"constraint:OnDelete:CASCADE;many2many:group_role"`
 	ImageURL         *string        `json:"image_url,omitempty"`
-	Name             *string        `json:"name,omitempty"`
+	Name             string         `json:"name,omitempty"`
 	Roles            datatypes.JSON `json:"roles,omitempty"`
 }
