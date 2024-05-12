@@ -57,6 +57,7 @@ func (auth) Register(c *fiber.Ctx) error {
 		LastName:  registerRequest.LastName,
 		Email:     registerRequest.Email,
 		Password:  password,
+		ImageURL: "https://xsgames.co/randomusers/assets/avatars/female/71.jpg",
 	}
 
 	err = database.DB.Create(&user).Error
