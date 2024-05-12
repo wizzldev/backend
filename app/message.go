@@ -8,7 +8,6 @@ import (
 	"github.com/wizzldev/chat/app/events"
 	"github.com/wizzldev/chat/database/models"
 	"github.com/wizzldev/chat/database/rdb"
-	"github.com/wizzldev/chat/pkg/configs"
 	"github.com/wizzldev/chat/pkg/repository"
 	"github.com/wizzldev/chat/pkg/ws"
 	"strconv"
@@ -19,10 +18,6 @@ import (
 var ctx = context.Background()
 
 func MessageActionHandler(s *ws.Server, conn *ws.Connection, userID uint, data []byte) error {
-	if configs.Env.Debug {
-		fmt.Printf("WS[%v] New message: %s by user ID %v\n", s.ID, string(data), userID)
-	}
-
 	user, err := getCachedUser(userID)
 
 	if err != nil {

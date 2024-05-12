@@ -43,7 +43,7 @@ func (me) UploadProfileImage(c *fiber.Ctx) error {
 	user := authUser(c)
 	uniqueId := uuid.New()
 	imageName := fmt.Sprintf("u%v-i%s.png", user.ID, strings.Replace(uniqueId.String(), "-", "", -1))
-	out, err := os.Create(fmt.Sprintf("./public/images/%s", imageName))
+	out, err := os.Create(fmt.Sprintf("./storage/image/%s", imageName))
 
 	if err != nil {
 		return err
@@ -58,11 +58,11 @@ func (me) UploadProfileImage(c *fiber.Ctx) error {
 	if user.ImageURL != "" {
 		splitImage := strings.Split(user.ImageURL, "/")
 		imgName := splitImage[len(splitImage)-1]
-		imgPath := fmt.Sprintf("./public/images/%s", imgName)
+		imgPath := fmt.Sprintf("./storage/image/%s", imgName)
 		_ = os.Remove(imgPath)
 	}
 
-	user.ImageURL = fmt.Sprintf("{cdn}/static/images/%s", imageName)
+	user.ImageURL = fmt.Sprintf("{cdn}/static/image/%s", imageName)
 	database.DB.Save(user)
 
 	return c.JSON(user)

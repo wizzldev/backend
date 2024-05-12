@@ -23,8 +23,6 @@ func main() {
 		ErrorHandler: routes.ErrorHandler,
 	})
 
-	app.Static("/static", "./public")
-
 	app.Use(recover.New())
 	app.Use(middlewares.CORS())
 
@@ -32,6 +30,7 @@ func main() {
 		app.Use(logger.New())
 	}
 
+	routes.RegisterStorage(app.Group("/storage"))
 	routes.RegisterAPI(app.Group("/api"))
 	routes.WS(app)
 
