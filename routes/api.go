@@ -20,6 +20,11 @@ func RegisterAPI(r fiber.Router) {
 		auth.Post("/me/profile-image", handlers.Me.UploadProfileImage)
 	}
 
+	users := auth.Group("/users")
+	{
+		users.Post("/findByEmail", requests.Use[requests.Email](), handlers.Users.FindByEmail)
+	}
+
 	chat := auth.Group("/chat")
 	{
 		chat.Get("/contacts", handlers.Chat.Contacts)

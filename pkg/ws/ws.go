@@ -48,7 +48,7 @@ func (s *Server) AddConnection(ws *websocket.Conn) {
 	s.Pool = append(s.Pool, conn)
 
 	if configs.Env.Debug {
-		fmt.Printf("[WS] New connection, UserID: %v, IP: %v", conn.UserID, conn.IP())
+		fmt.Printf("[WS] New connection, UserID: %v, IP: %v\n", conn.UserID, conn.IP())
 	}
 
 	conn.ReadLoop()

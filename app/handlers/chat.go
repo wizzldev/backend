@@ -36,10 +36,14 @@ func (chat) PrivateMessage(c *fiber.Ctx) error {
 	}
 
 	if gID, ok := repository.Group.IsGroupExists([]uint{user.ID, userID}); ok {
-		return c.JSON(getPM(gID))
+		return c.JSON(fiber.Map{
+			"pm_id": gID,
+		})
 	}
 
 	group := models.Group{
+		Name:     nil,
+		ImageURL: nil,
 		Users: []*models.User{
 			{
 				Base: models.Base{
@@ -50,9 +54,21 @@ func (chat) PrivateMessage(c *fiber.Ctx) error {
 		},
 		IsPrivateMessage: true,
 	}
-
 	database.DB.Create(&group)
-	return c.JSON(getPM(group.ID))
+	database.DB.Create(&models.Message{
+		HasGroup: models.HasGroup{
+			GroupID: group.ID,
+		},
+		HasMessageSender: models.HasMessageSender{
+			SenderID: user.ID,
+		},
+		Type:     "chat.create",
+		DataJSON: "{}",
+	})
+
+	return c.JSON(fiber.Map{
+		"pm_id": group.ID,
+	})
 }
 
 func (chat) Search(c *fiber.Ctx) error {
@@ -66,13 +82,6 @@ func (chat) Search(c *fiber.Ctx) error {
 
 	users := repository.User.Search(v.FirstName, v.LastName, v.Email, page)
 	return c.JSON(users)
-}
-
-func getPM(id uint) fiber.Map {
-	g := repository.Group.FindPM(id)
-	return fiber.Map{
-		"pm_id": g.ID,
-	}
 }
 
 func (chat) Find(c *fiber.Ctx) error {
