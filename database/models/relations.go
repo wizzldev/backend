@@ -24,3 +24,12 @@ type HasMessageReply struct {
 	ReplyID uint     `json:"-" gorm:"message_id;default:NULL"`
 	Reply   *Message `json:"reply,omitempty" gorm:"constraint:OnDelete:CASCADE;foreignKey:ReplyID"`
 }
+
+type HasMessage struct {
+	MessageID uint     `json:"-"`
+	Message   *Message `json:"message,omitempty" gorm:"constraint:OnDelete:CASCADE;foreignKey:MessageID"`
+}
+
+type HasMessageLikes struct {
+	MessageLikes []MessageLike `json:"likes,omitempty" gorm:"constraint:OnDelete:CASCADE;foreignKey:MessageID"`
+}

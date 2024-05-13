@@ -40,7 +40,9 @@ func MessageActionHandler(s *ws.Server, conn *ws.Connection, userID uint, data [
 
 	switch msg.Type {
 	case "message":
-		events.DispatchMessage(s.ID, getCachedGroupUserIDs(s.ID), uint(gID), user, msg)
+		return events.DispatchMessage(s.ID, getCachedGroupUserIDs(s.ID), uint(gID), user, msg)
+	case "message.like":
+		return events.DispatchMessageLike(s.ID, getCachedGroupUserIDs(s.ID), uint(gID), user, msg)
 	case "leave":
 		conn.Send(ws.Message{
 			Event: "notification",

@@ -5,7 +5,6 @@ import (
 	"github.com/wizzldev/chat/database"
 	"github.com/wizzldev/chat/database/models"
 	"github.com/wizzldev/chat/pkg/ws"
-	"slices"
 	"time"
 )
 
@@ -19,7 +18,7 @@ type ChatMessage struct {
 	UpdatedAt time.Time   `json:"updated_at"`
 }
 
-func DispatchMessage(wsID string, userIDs []uint, gID uint, user *models.User, msg *ws.ClientMessage) {
+func DispatchMessage(wsID string, userIDs []uint, gID uint, user *models.User, msg *ws.ClientMessage) error {
 	fmt.Println("message send to:", userIDs)
 
 	message := models.Message{
@@ -48,14 +47,6 @@ func DispatchMessage(wsID string, userIDs []uint, gID uint, user *models.User, m
 		},
 	})
 
-	fmt.Println("s f", len(sentTo) < len(userIDs))
-	if len(sentTo) < len(userIDs) {
-		var shouldFetchIDs []uint
-		for _, id := range userIDs {
-			if !slices.Contains(sentTo, id) {
-				shouldFetchIDs = append(shouldFetchIDs, id)
-			}
-		}
-		go ShouldFetch(shouldFetchIDs, gID)
-	}
+	DispatchShouldFetch(sentTo, userIDs, gID)
+	return nil
 }
