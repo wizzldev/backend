@@ -32,6 +32,7 @@ func MustConnect() {
 	log.Println("Running migrations")
 	err = db.AutoMigrate(
 		&models.Message{},
+		&models.MessageLike{},
 		&models.Group{},
 		&models.MemberRole{},
 		&models.Block{},
