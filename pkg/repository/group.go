@@ -78,7 +78,7 @@ func (group) IsGroupExists(userIDs []uint) (uint, bool) {
 	return data.GroupID, int(data.MemberCount) == len(userIDs)
 }
 
-func (group) GetContactsForUser(userID uint, page int) *[]Contact {
+func (group) GetContactsForUser(userID uint, page int, authUser *models.User) *[]Contact {
 	var perPage = 15
 	var offset = perPage * (page - 1)
 
@@ -158,7 +158,11 @@ func (group) GetContactsForUser(userID uint, page int) *[]Contact {
 			for _, u := range userGroupMap {
 				if u.GroupID == v.GroupID {
 					groupName = fmt.Sprintf("%s %s", u.UserFirstName, u.UserLastName)
+					break
 				}
+			}
+			if groupName == "" {
+				groupName = fmt.Sprintf("You")
 			}
 		}
 
@@ -169,6 +173,9 @@ func (group) GetContactsForUser(userID uint, page int) *[]Contact {
 				if u.GroupID == v.GroupID {
 					imageURL = u.UserImageUrl
 				}
+			}
+			if imageURL == "" {
+				imageURL = authUser.ImageURL
 			}
 		}
 
@@ -203,8 +210,10 @@ func (group) GetChatUser(chatID uint, userID uint) *models.Group {
 		inner join users on users.id = group_user.user_id
 		where group_id = ? and users.id != ? limit 1
 		`, data.ID, userID).Scan(&user).Error
-		data.ImageURL = &user.ImageURL
-		data.Name = fmt.Sprintf("%s %s", user.FirstName, user.LastName)
+		data.ImageURL = user.ImageURL
+		if user.ID > 0 {
+			data.Name = fmt.Sprintf("%s %s", user.FirstName, user.LastName)
+		}
 	}
 
 	return &data

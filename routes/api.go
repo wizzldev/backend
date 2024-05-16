@@ -28,6 +28,7 @@ func RegisterAPI(r fiber.Router) {
 	chat := auth.Group("/chat")
 	{
 		chat.Get("/contacts", handlers.Chat.Contacts)
+		chat.Get("/user/:id<int>", handlers.Group.GetInfo)
 		chat.Get("/private/:id<int>", handlers.Chat.PrivateMessage)
 		chat.Post("/search", requests.Use[requests.SearchContacts](), handlers.Chat.Search)
 	}
@@ -37,6 +38,7 @@ func RegisterAPI(r fiber.Router) {
 		msg.Get("/", handlers.Chat.Find)
 	}
 
-	chat.Post("/group", handlers.Group.New)
+	chat.Post("/group", requests.Use[requests.NewGroup](), handlers.Group.New)
+	chat.Get("/roles", handlers.Group.GetAllRoles)
 	_ = chat.Group("/group/:groupId")
 }

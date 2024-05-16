@@ -48,3 +48,10 @@ func IsExists[M any](fields []string, values []any) bool {
 
 	return count > 0
 }
+
+func IDsExists[M any](IDs []uint) []uint {
+	var model M
+	var existing []uint
+	database.DB.Model(model).Select("id").Where("id in (?)", IDs).Find(&existing)
+	return existing
+}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/wizzldev/chat/pkg/utils/role"
 	"regexp"
 	"strings"
 )
@@ -16,9 +17,15 @@ type IError struct {
 	Value string `json:"value,omitempty"`
 }
 
-var Validator = validator.New()
+var (
+	Validator    = validator.New()
+	IsRegistered = false
+)
 
 func Validate[T any](c *fiber.Ctx) error {
+	if !IsRegistered {
+		RegisterCustomValidations()
+	}
 	var s T
 	var errs []*IError
 
@@ -54,4 +61,13 @@ func Validate[T any](c *fiber.Ctx) error {
 
 	c.Locals("requestValidation", &s)
 	return c.Next()
+}
+
+func RegisterCustomValidations() {
+	IsRegistered = true
+	_ = Validator.RegisterValidation("is_role", func(level validator.FieldLevel) bool {
+		value := level.Field().String()
+		_, err := role.New(strings.ToUpper(value))
+		return err == nil
+	})
 }

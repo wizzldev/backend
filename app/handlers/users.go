@@ -15,7 +15,7 @@ func (users) FindByEmail(c *fiber.Ctx) error {
 
 	user := repository.User.FindByEmail(data.Email)
 
-	if repository.User.IsBlocked(user.ID, authUserID(c)) || user.ID <= 0 {
+	if repository.User.IsBlocked(user.ID, authUserID(c)) || user.ID < 1 {
 		return fiber.ErrNotFound
 	}
 

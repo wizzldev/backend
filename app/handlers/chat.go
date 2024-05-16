@@ -18,7 +18,7 @@ var Chat chat
 
 func (chat) Contacts(c *fiber.Ctx) error {
 	page := c.QueryInt("page", 1)
-	data := repository.Group.GetContactsForUser(authUserID(c), page)
+	data := repository.Group.GetContactsForUser(authUserID(c), page, authUser(c))
 	return c.JSON(data)
 }
 
@@ -42,7 +42,6 @@ func (chat) PrivateMessage(c *fiber.Ctx) error {
 	}
 
 	group := models.Group{
-		ImageURL: nil,
 		Users: []*models.User{
 			{
 				Base: models.Base{
@@ -89,7 +88,13 @@ func (chat) Find(c *fiber.Ctx) error {
 		return err
 	}
 
+	user := authUser(c)
+
 	g := repository.Group.GetChatUser(uint(id), authUserID(c))
+	if g.ImageURL == "" && g.Name == "" {
+		g.ImageURL = user.ImageURL
+		g.Name = "You"
+	}
 	latestMessages := repository.Message.Latest(uint(id))
 	return c.JSON(fiber.Map{
 		"group":    g,
