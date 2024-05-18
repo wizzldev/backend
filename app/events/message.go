@@ -1,9 +1,9 @@
 package events
 
 import (
-	"fmt"
 	"github.com/wizzldev/chat/database"
 	"github.com/wizzldev/chat/database/models"
+	"github.com/wizzldev/chat/pkg/logger"
 	"github.com/wizzldev/chat/pkg/ws"
 	"time"
 )
@@ -19,8 +19,6 @@ type ChatMessage struct {
 }
 
 func DispatchMessage(wsID string, userIDs []uint, gID uint, user *models.User, msg *ws.ClientMessage) error {
-	fmt.Println("message send to:", userIDs)
-
 	message := models.Message{
 		HasGroup: models.HasGroup{
 			GroupID: gID,
@@ -46,6 +44,8 @@ func DispatchMessage(wsID string, userIDs []uint, gID uint, user *models.User, m
 			UpdatedAt: message.UpdatedAt,
 		},
 	})
+
+	logger.WSSend(wsID, "message", user.ID, sentTo)
 
 	DispatchShouldFetch(sentTo, userIDs, gID)
 	return nil

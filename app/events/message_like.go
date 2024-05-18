@@ -2,7 +2,6 @@ package events
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/wizzldev/chat/database"
 	"github.com/wizzldev/chat/database/models"
 	"github.com/wizzldev/chat/pkg/repository"
@@ -31,7 +30,6 @@ func DispatchMessageLike(wsID string, userIDs []uint, gID uint, user *models.Use
 		messageLike := repository.FindModelBy[models.MessageLike]([]string{"message_id", "user_id"}, []any{msgID.MessageID, user.ID})
 		var isLiked bool
 
-		fmt.Println("delete:", messageLike)
 		if messageLike.ID > 0 {
 			database.DB.Delete(messageLike)
 		} else {

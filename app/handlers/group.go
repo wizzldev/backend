@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/lib/pq"
 	"github.com/wizzldev/chat/app/requests"
 	"github.com/wizzldev/chat/database"
 	"github.com/wizzldev/chat/database/models"
@@ -15,7 +16,6 @@ var Group group
 
 func (group) New(c *fiber.Ctx) error {
 	data := validation[requests.NewGroup](c)
-	roles := role.NewRoles(data.Roles)
 
 	userIDs := repository.IDsExists[models.User](data.UserIDs)
 	var users []*models.User
@@ -27,10 +27,15 @@ func (group) New(c *fiber.Ctx) error {
 		users = append(users, &models.User{Base: models.Base{ID: id}})
 	}
 
+	var roles pq.StringArray
+	for _, r := range data.Roles {
+		roles = append(roles, r)
+	}
+
 	g := models.Group{
 		ImageURL:         "https://images.unsplash.com/photo-1493612276216-ee3925520721?q=80&w=1000&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cmFuZG9tfGVufDB8fDB8fHww",
 		Name:             data.Name,
-		Roles:            roles.String(),
+		Roles:            roles,
 		IsPrivateMessage: false,
 		Users:            users,
 	}

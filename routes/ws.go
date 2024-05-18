@@ -22,6 +22,5 @@ func WS(r fiber.Router) {
 		return fiber.ErrUpgradeRequired
 	})
 	s.Get("/", handlers.WS.Connect)
-	s.Get("/:id", handlers.WS.Connect)
 	s.Get("/chat/:id", handlers.Chat.Connect)
 }

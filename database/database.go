@@ -24,7 +24,7 @@ func MustConnect() {
 
 	log.Println("successfully connected to the database!")
 	if configs.Env.Debug {
-		db.Logger = logger.Default.LogMode(logger.Info)
+		db.Logger = logger.Default.LogMode(logger.Warn)
 	} else {
 		db.Logger = logger.Default.LogMode(logger.Error)
 	}

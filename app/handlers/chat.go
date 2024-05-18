@@ -8,7 +8,9 @@ import (
 	"github.com/wizzldev/chat/database"
 	"github.com/wizzldev/chat/database/models"
 	"github.com/wizzldev/chat/pkg/repository"
+	"github.com/wizzldev/chat/pkg/utils/role"
 	"github.com/wizzldev/chat/pkg/ws"
+	"slices"
 	"strconv"
 )
 
@@ -95,10 +97,25 @@ func (chat) Find(c *fiber.Ctx) error {
 		g.ImageURL = user.ImageURL
 		g.Name = "You"
 	}
+
+	var roles role.Roles
+	roles = append(roles, repository.Group.GetUserRoles(g.ID, authUserID(c))...)
+	for _, r := range g.Roles {
+		rl, err := role.New(r)
+		if err != nil {
+			continue
+		}
+
+		if !slices.Contains(roles, rl) {
+			roles = append(roles, rl)
+		}
+	}
+
 	latestMessages := repository.Message.Latest(uint(id))
 	return c.JSON(fiber.Map{
-		"group":    g,
-		"messages": latestMessages,
+		"group":      g,
+		"messages":   latestMessages,
+		"user_roles": roles,
 	})
 }
 

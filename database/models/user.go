@@ -34,6 +34,5 @@ func (u *User) PublicData() fiber.Map {
 func (u *User) AfterFind(*gorm.Tx) error {
 	exists, _ := rdb.RedisClient.Exists(ctx, fmt.Sprintf("user.is-online.%v", u.ID)).Result()
 	u.IsOnline = exists == 1
-	fmt.Println("after find:", u.ID, u.IsOnline)
 	return nil
 }

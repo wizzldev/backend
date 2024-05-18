@@ -28,10 +28,18 @@ func (c *Connection) Init() {
 }
 
 func (c *Connection) Disconnect() {
+	if !c.Connected {
+		return
+	}
+	WebSocket[c.serverID].mu.Lock()
 	c.Connected = false
-	_ = c.Conn.Close()
+	err := c.Conn.Close()
+	if err != nil {
+		fmt.Println("Error closing connection", err)
+	}
 	WebSocket[c.serverID].Remove(c)
 	fmt.Printf("Disconnected from server %s: %s \n", c.serverID, c.IP())
+	WebSocket[c.serverID].mu.Unlock()
 }
 
 func (c *Connection) ReadLoop() {
@@ -42,7 +50,6 @@ func (c *Connection) ReadLoop() {
 	)
 	for c.Connected {
 		if mt, msg, err = c.ReadMessage(); err != nil {
-			c.Disconnect()
 			break
 		}
 		if mt != websocket.TextMessage {
