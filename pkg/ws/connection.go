@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2/log"
 	"github.com/wizzldev/chat/pkg/configs"
+	"time"
 )
 
 type Connection struct {
@@ -27,11 +28,26 @@ func (c *Connection) Init() {
 	return
 }
 
-func (c *Connection) Disconnect() {
+func (c *Connection) Disconnect(msg ...string) {
+	if !c.Connected {
+		return
+	}
+
+	closeMessage := "closed by client"
+	if len(msg) > 0 {
+		closeMessage = msg[0]
+	}
+
+	WebSocket[c.serverID].mu.Lock()
+	_ = c.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, closeMessage), time.Now().Add(time.Second))
 	c.Connected = false
-	_ = c.Conn.Close()
+	err := c.Conn.Close()
+	if err != nil {
+		fmt.Println("Error closing connection", err)
+	}
 	WebSocket[c.serverID].Remove(c)
 	fmt.Printf("Disconnected from server %s: %s \n", c.serverID, c.IP())
+	WebSocket[c.serverID].mu.Unlock()
 }
 
 func (c *Connection) ReadLoop() {
@@ -42,7 +58,6 @@ func (c *Connection) ReadLoop() {
 	)
 	for c.Connected {
 		if mt, msg, err = c.ReadMessage(); err != nil {
-			c.Disconnect()
 			break
 		}
 		if mt != websocket.TextMessage {
@@ -51,8 +66,9 @@ func (c *Connection) ReadLoop() {
 
 		if configs.Env.Debug {
 			c.Send(Message{
-				Event: "echo",
-				Data:  string(msg),
+				Event:  "echo",
+				Data:   string(msg),
+				HookID: "#",
 			})
 		}
 

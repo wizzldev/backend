@@ -3,5 +3,6 @@ package models
 type MemberRole struct {
 	Base
 	HasUser
-	Roles string `json:"roles"`
+	HasGroup
+	Role string `json:"role"`
 }

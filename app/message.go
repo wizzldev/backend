@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/gofiber/fiber/v2"
 	"github.com/wizzldev/chat/app/events"
 	"github.com/wizzldev/chat/database/models"
 	"github.com/wizzldev/chat/database/rdb"
@@ -17,7 +16,7 @@ import (
 
 var ctx = context.Background()
 
-func MessageActionHandler(s *ws.Server, conn *ws.Connection, userID uint, data []byte) error {
+func MessageActionHandler(s *ws.Server, conn *ws.Connection, userID uint, msg *ws.ClientMessage) error {
 	user, err := getCachedUser(userID)
 
 	if err != nil {
@@ -33,25 +32,11 @@ func MessageActionHandler(s *ws.Server, conn *ws.Connection, userID uint, data [
 		return err
 	}
 
-	msg, err := ws.NewClientMessage(data, conn)
-	if err != nil {
-		return err
-	}
-
 	switch msg.Type {
 	case "message":
 		return events.DispatchMessage(s.ID, getCachedGroupUserIDs(s.ID), uint(gID), user, msg)
 	case "message.like":
 		return events.DispatchMessageLike(s.ID, getCachedGroupUserIDs(s.ID), uint(gID), user, msg)
-	case "leave":
-		conn.Send(ws.Message{
-			Event: "notification",
-			Data: fiber.Map{
-				"type":    "info",
-				"message": "You've been disconnected from this chat.",
-			},
-		})
-		conn.Disconnect()
 	default:
 		conn.Send(ws.Message{
 			Event: "error",
@@ -116,19 +101,19 @@ func getCachedGroupUserIDs(groupID string) []uint {
 }
 
 func saveDBGroupUsers(groupID string, key string) []uint {
-	var gIDs []uint
+	var uIDs []uint
 
 	gID, err := strconv.Atoi(groupID)
 	if err != nil {
-		return gIDs
+		return uIDs
 	}
 
-	gIDs = repository.Group.GetUserIDs(uint(gID))
-	data, err := json.Marshal(gIDs)
+	uIDs = repository.Group.GetUserIDs(uint(gID))
+	data, err := json.Marshal(uIDs)
 	if err != nil {
-		return gIDs
+		return uIDs
 	}
 
 	rdb.RedisClient.Set(ctx, key, data, time.Minute*20)
-	return gIDs
+	return uIDs
 }

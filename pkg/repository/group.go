@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2/log"
 	"github.com/wizzldev/chat/database"
 	"github.com/wizzldev/chat/database/models"
+	"github.com/wizzldev/chat/pkg/utils/role"
 	"strconv"
 	"time"
 )
@@ -39,7 +40,7 @@ func (group) CanUserAccess(groupID uint, u *models.User) bool {
 func (group) GetUserIDs(groupID uint) []uint {
 	var gIDs []uint
 	err := database.DB.Raw(`
-	select users.id from groups
+	select distinct users.id from groups
 	inner join group_user on group_user.group_id = groups.id
 	inner join users on users.id = group_user.user_id
 	where groups.id = ?
@@ -72,8 +73,6 @@ func (group) IsGroupExists(userIDs []uint) (uint, bool) {
 		log.Warn("Failed to execute query:", err)
 		return 0, true
 	}
-
-	fmt.Println(data)
 
 	return data.GroupID, int(data.MemberCount) == len(userIDs)
 }
@@ -118,8 +117,6 @@ func (group) GetContactsForUser(userID uint, page int, authUser *models.User) *[
 	)
 	order by message_created_at desc limit 15 offset `+strconv.Itoa(offset)+`
 	`, userID).Find(&data).Error
-
-	fmt.Println(data)
 
 	var privateMessageIDs []uint
 	for _, v := range data {
@@ -217,4 +214,21 @@ func (group) GetChatUser(chatID uint, userID uint) *models.Group {
 	}
 
 	return &data
+}
+
+func (group) GetUserRoles(gID uint, uID uint) role.Roles {
+	var dbRoles []models.MemberRole
+	database.DB.Model(&dbRoles).Where("user_id = ? and group_id = ?", uID, gID).Find(&dbRoles)
+
+	var roles role.Roles
+
+	for _, r := range dbRoles {
+		realRole, err := role.New(r.Role)
+		if err != nil {
+			continue
+		}
+		roles = append(roles, realRole)
+	}
+
+	return roles
 }

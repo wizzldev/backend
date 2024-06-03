@@ -1,11 +1,12 @@
 package ws
 
 import (
-	"fmt"
 	"github.com/gofiber/contrib/websocket"
 	"github.com/wizzldev/chat/pkg/configs"
+	"github.com/wizzldev/chat/pkg/logger"
 	"github.com/wizzldev/chat/pkg/utils"
 	"slices"
+	"sync"
 )
 
 var MessageHandler func(s *Server, conn *Connection, userID uint, message []byte) error
@@ -15,6 +16,7 @@ var WebSocket = map[string]*Server{}
 type Server struct {
 	ID   string
 	Pool []*Connection
+	mu   sync.Mutex
 }
 
 type BroadcastFunc func(*Connection) bool
@@ -42,14 +44,17 @@ func (s *Server) AddConnection(ws *websocket.Conn) {
 	defer conn.Disconnect()
 	conn.Init()
 	conn.Send(Message{
-		"connection",
-		"established",
+		Event:  "connection",
+		Data:   "established",
+		HookID: "#",
 	})
 	s.Pool = append(s.Pool, conn)
 
 	if configs.Env.Debug {
-		fmt.Printf("[WS] New connection, UserID: %v, IP: %v\n", conn.UserID, conn.IP())
+		logger.WSNewConnection(s.ID, conn.IP(), conn.UserID)
 	}
+
+	s.LogPoolSize()
 
 	conn.ReadLoop()
 }
@@ -64,7 +69,7 @@ func (s *Server) Broadcast(m Message) {
 
 func (s *Server) BroadcastFunc(f BroadcastFunc, m Message) {
 	for _, conn := range s.Pool {
-		if f(conn) {
+		if conn.Connected && f(conn) {
 			conn.Send(m)
 		}
 	}
@@ -73,7 +78,7 @@ func (s *Server) BroadcastFunc(f BroadcastFunc, m Message) {
 func (s *Server) BroadcastToUsers(userIDs []uint, m Message) []uint {
 	var sentTo []uint
 	for _, conn := range s.Pool {
-		if slices.Contains(userIDs, conn.UserID) {
+		if slices.Contains(userIDs, conn.UserID) && conn.Connected {
 			conn.Send(m)
 			sentTo = append(sentTo, conn.UserID)
 		}
@@ -82,5 +87,19 @@ func (s *Server) BroadcastToUsers(userIDs []uint, m Message) []uint {
 }
 
 func (s *Server) Remove(c *Connection) {
+	s.LogPoolSize()
 	s.Pool = utils.RemoveFromSlice(s.Pool, c)
+	s.LogPoolSize()
+}
+
+func (s *Server) GetUserIDs() []uint {
+	var userIDs []uint
+	for _, conn := range s.Pool {
+		userIDs = append(userIDs, conn.UserID)
+	}
+	return userIDs
+}
+
+func (s *Server) LogPoolSize() {
+	logger.WSPoolSize(s.ID, len(s.Pool), s.GetUserIDs())
 }
