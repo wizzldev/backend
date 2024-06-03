@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2/log"
 	"github.com/wizzldev/chat/pkg/configs"
+	"time"
 )
 
 type Connection struct {
@@ -27,11 +28,18 @@ func (c *Connection) Init() {
 	return
 }
 
-func (c *Connection) Disconnect() {
+func (c *Connection) Disconnect(msg ...string) {
 	if !c.Connected {
 		return
 	}
+
+	closeMessage := "closed by client"
+	if len(msg) > 0 {
+		closeMessage = msg[0]
+	}
+
 	WebSocket[c.serverID].mu.Lock()
+	_ = c.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, closeMessage), time.Now().Add(time.Second))
 	c.Connected = false
 	err := c.Conn.Close()
 	if err != nil {
@@ -58,8 +66,9 @@ func (c *Connection) ReadLoop() {
 
 		if configs.Env.Debug {
 			c.Send(Message{
-				Event: "echo",
-				Data:  string(msg),
+				Event:  "echo",
+				Data:   string(msg),
+				HookID: "#",
 			})
 		}
 

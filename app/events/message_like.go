@@ -59,6 +59,7 @@ func DispatchMessageLike(wsID string, userIDs []uint, gID uint, user *models.Use
 				Sender:    user,
 				MessageID: messageLike.MessageID,
 			},
+			HookID: msg.HookID,
 		})
 
 		DispatchShouldFetch(sentTo, userIDs, gID)

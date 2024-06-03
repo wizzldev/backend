@@ -44,8 +44,9 @@ func (s *Server) AddConnection(ws *websocket.Conn) {
 	defer conn.Disconnect()
 	conn.Init()
 	conn.Send(Message{
-		"connection",
-		"established",
+		Event:  "connection",
+		Data:   "established",
+		HookID: "#",
 	})
 	s.Pool = append(s.Pool, conn)
 

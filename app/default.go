@@ -21,6 +21,15 @@ func WSActionHandler(s *ws.Server, conn *ws.Connection, userID uint, data []byte
 		logger.WSNewEvent(s.ID, msg.Type, userID)
 	}
 
+	if msg.Type == "ping" {
+		conn.Send(ws.Message{
+			Event:  "pong",
+			Data:   "pong",
+			HookID: msg.HookID,
+		})
+		return nil
+	}
+
 	if msg.Type == "close" {
 		logger.WSDisconnect(s.ID, userID)
 		conn.Disconnect()
@@ -30,13 +39,6 @@ func WSActionHandler(s *ws.Server, conn *ws.Connection, userID uint, data []byte
 	_ = rdb.Redis.Set(fmt.Sprintf("user.is-online.%v", userID), []byte("true"), time.Minute*10)
 	if s.ID != utils.DefaultWSPool {
 		return MessageActionHandler(s, conn, userID, msg)
-	}
-
-	if msg.Type == "ping" {
-		conn.Send(ws.Message{
-			Event: "pong",
-			Data:  "pong",
-		})
 	}
 
 	return nil

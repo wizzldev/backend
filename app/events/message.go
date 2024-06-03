@@ -43,6 +43,7 @@ func DispatchMessage(wsID string, userIDs []uint, gID uint, user *models.User, m
 			CreatedAt: message.CreatedAt,
 			UpdatedAt: message.UpdatedAt,
 		},
+		HookID: msg.HookID,
 	})
 
 	logger.WSSend(wsID, "message", user.ID, sentTo)
