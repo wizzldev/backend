@@ -2,8 +2,9 @@ package configs
 
 import (
 	"fmt"
-	"github.com/golobby/dotenv"
 	"os"
+
+	"github.com/golobby/dotenv"
 )
 
 type session struct {
@@ -26,12 +27,22 @@ type databaseEnv struct {
 	Database string `env:"DB_NAME"`
 }
 
+type email struct {
+	SMTPHost      string `env:"EMAIL_SMTP_HOST"`
+	SMTPPort      int    `env:"EMAIL_SMTP_PORT"`
+	Username      string `env:"EMAIL_SMTP_USER"`
+	Password      string `env:"EMAIL_SMTP_PASS"`
+	SenderAddress string `env:"EMAIL_SENDER_ADDRESS"`
+}
+
 type env struct {
+	Frontend   string `env:"FRONTEND_URL"`
 	Debug      bool   `env:"DEBUG"`
 	ServerPort string `env:"SERVER_PORT"`
 	Database   databaseEnv
 	Session    session
 	Redis      redis
+	Email      email
 }
 
 var Env env
