@@ -15,6 +15,10 @@ type HasUser struct {
 	User   User `json:"sender" gorm:"constraint:OnDelete:CASCADE;foreignKey:UserID"`
 }
 
+func HasUserID(uid uint) HasUser {
+	return HasUser{UserID: uid}
+}
+
 type GroupUser struct {
 	GroupID uint `gorm:"group_id"`
 	UserID  uint `gorm:"user_id"`

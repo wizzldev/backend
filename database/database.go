@@ -2,12 +2,13 @@ package database
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/wizzldev/chat/database/models"
 	"github.com/wizzldev/chat/pkg/configs"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"log"
 )
 
 var DB *gorm.DB
@@ -36,6 +37,8 @@ func MustConnect() {
 		&models.Group{},
 		&models.MemberRole{},
 		&models.Block{},
+		&models.EmailVerification{},
+		&models.ResetPassword{},
 		&models.User{},
 	)
 
