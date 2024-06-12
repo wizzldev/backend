@@ -3,10 +3,11 @@ package models
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/wizzldev/chat/database/rdb"
 	"gorm.io/gorm"
-	"time"
 )
 
 type User struct {
