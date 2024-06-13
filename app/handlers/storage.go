@@ -48,13 +48,14 @@ func (s *storage) GetAvatar(c *fiber.Ctx) error {
 		return err
 	}
 
-	c.Response().Header.Set("Content-Type", fileModel.ContentType)
 	// TODO: cache image with query params and everything
+	// FIXIT: image downloads instead of showing
 	stream, err := services.Storage.WebPStream(file, uint(size))
 	if err != nil {
 		return err
 	}
 
+	c.Type(fileModel.ContentType)
 	return c.SendStream(stream)
 }
 
