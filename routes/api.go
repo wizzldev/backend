@@ -9,7 +9,7 @@ import (
 
 func RegisterAPI(r fiber.Router) {
 	{
-		r.Post("/login", requests.Use[requests.Login](), handlers.Auth.Login)
+		r.Post("/login", requests.Use[requests.Login](), middlewares.NewAuthLimiter(), handlers.Auth.Login)
 		r.Post("/register", requests.Use[requests.Register](), handlers.Auth.Register)
 		r.Get("/logout", handlers.Auth.Logout)
 		r.Post("/request-new-password", requests.Use[requests.NewPassword](), handlers.Auth.RequestNewPassword)
@@ -46,4 +46,10 @@ func RegisterAPI(r fiber.Router) {
 	chat.Post("/group", requests.Use[requests.NewGroup](), handlers.Group.New)
 	chat.Get("/roles", handlers.Group.GetAllRoles)
 	_ = chat.Group("/group/:groupId")
+
+	auth.Use(HandleNotFoundError)
+	users.Use(HandleNotFoundError)
+	chat.Use(HandleNotFoundError)
+	msg.Use(HandleNotFoundError)
+	r.Use(HandleNotFoundError)
 }

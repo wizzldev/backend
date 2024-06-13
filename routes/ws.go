@@ -12,15 +12,15 @@ import (
 func WS(r fiber.Router) {
 	ws.MessageHandler = app.WSActionHandler
 
-	s := r.Group("/ws", middlewares.WSAuth)
-
-	s.Use(func(c *fiber.Ctx) error {
+	r.Use(middlewares.WSAuth)
+	r.Use(func(c *fiber.Ctx) error {
 		if websocket.IsWebSocketUpgrade(c) {
 			c.Locals("allowed", true)
 			return c.Next()
 		}
 		return fiber.ErrUpgradeRequired
 	})
-	s.Get("/", handlers.WS.Connect)
-	s.Get("/chat/:id", handlers.Chat.Connect)
+	r.Get("/", handlers.WS.Connect)
+	r.Get("/chat/:id", handlers.Chat.Connect)
+	r.Use(HandleNotFoundError)
 }

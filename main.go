@@ -31,8 +31,8 @@ func main() {
 	}
 
 	routes.RegisterStorage(app.Group("/storage"))
-	routes.RegisterAPI(app.Group("/api"))
-	routes.WS(app)
+	routes.WS(app.Group("/ws"))
+	routes.RegisterAPI(app)
 
 	app.Use(routes.HandleNotFoundError)
 

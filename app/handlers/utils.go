@@ -7,7 +7,7 @@ import (
 )
 
 func validation[T any](c *fiber.Ctx) *T {
-	return c.Locals("requestValidation").(*T)
+	return c.Locals(utils.RequestValidation).(*T)
 }
 
 func authUser(c *fiber.Ctx) *models.User {
