@@ -36,13 +36,14 @@ type email struct {
 }
 
 type env struct {
-	Frontend   string `env:"FRONTEND_URL"`
-	Debug      bool   `env:"DEBUG"`
-	ServerPort string `env:"SERVER_PORT"`
-	Database   databaseEnv
-	Session    session
-	Redis      redis
-	Email      email
+	Frontend    string `env:"FRONTEND_URL"`
+	Debug       bool   `env:"DEBUG"`
+	ServerPort  string `env:"SERVER_PORT"`
+	MaxFileSize int    `env:"MAX_FILE_SIZE"`
+	Database    databaseEnv
+	Session     session
+	Redis       redis
+	Email       email
 }
 
 var Env env

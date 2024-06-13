@@ -1,9 +1,11 @@
 package services
 
 import (
-	"github.com/gofiber/fiber/v2"
+	"bytes"
+	"github.com/kolesa-team/go-webp/decoder"
 	"github.com/kolesa-team/go-webp/encoder"
 	"github.com/kolesa-team/go-webp/webp"
+	"github.com/nfnt/resize"
 	"image/png"
 	"io"
 	"mime"
@@ -14,14 +16,15 @@ type storage struct{}
 
 var Storage storage
 
-func (storage) WebPFromFormFile(c *fiber.Ctx, file io.Reader, dest *os.File) error {
+func (storage) WebPFromFormFile(file io.Reader, dest *os.File) error {
 	img, err := png.Decode(file)
 	if err != nil {
 		return err
 	}
 
-	options, err := encoder.NewLossyEncoderOptions(encoder.PresetDefault, 100)
+	img = resize.Resize(512, 512, img, resize.Lanczos3)
 
+	options, err := encoder.NewLossyEncoderOptions(encoder.PresetDefault, 75)
 	if err != nil {
 		return err
 	}
@@ -38,4 +41,23 @@ func (storage) GetFileName(key, mimeType string) string {
 		}
 	}
 	return key + t
+}
+
+func (storage) WebPStream(file io.Reader, size uint) (io.Reader, error) {
+	img, err := webp.Decode(file, &decoder.Options{})
+	if err != nil {
+		return nil, err
+	}
+
+	if size >= 15 {
+		img = resize.Resize(size, size, img, resize.Lanczos3)
+	}
+
+	buf := new(bytes.Buffer)
+	err = webp.Encode(buf, img, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes.NewReader(buf.Bytes()), nil
 }

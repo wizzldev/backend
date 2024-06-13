@@ -36,11 +36,26 @@ func (s *storage) Get(c *fiber.Ctx) error {
 }
 
 func (s *storage) GetAvatar(c *fiber.Ctx) error {
-	file := s.localFile(c)
-	if file.Type != "avatar" {
+	fileModel := s.localFile(c)
+	if fileModel.Type != "avatar" {
 		return fiber.ErrBadRequest
 	}
-	return c.SendFile(file.Path)
+
+	size := c.QueryInt("size", 0)
+
+	file, err := os.Open(fileModel.Path)
+	if err != nil {
+		return err
+	}
+
+	c.Response().Header.Set("Content-Type", fileModel.ContentType)
+	// TODO: cache image with query params and everything
+	stream, err := services.Storage.WebPStream(file, uint(size))
+	if err != nil {
+		return err
+	}
+
+	return c.SendStream(stream)
 }
 
 func (s *storage) StoreAvatar(c *fiber.Ctx) error {
@@ -50,6 +65,7 @@ func (s *storage) StoreAvatar(c *fiber.Ctx) error {
 	}
 
 	file, err := fileH.Open()
+	defer file.Close()
 	if err != nil {
 		return err
 	}
@@ -57,11 +73,12 @@ func (s *storage) StoreAvatar(c *fiber.Ctx) error {
 	disc := s.newDiscriminator()
 	path := services.Storage.GetFileName(disc, fileH.Header.Get("Content-Type"))
 	dest, err := os.Open(filepath.Join(s.BasePath, path))
+	defer dest.Close()
 	if err != nil {
 		return err
 	}
 
-	err = services.Storage.WebPFromFormFile(c, file, dest)
+	err = services.Storage.WebPFromFormFile(file, dest)
 	if err != nil {
 		return err
 	}
@@ -71,6 +88,7 @@ func (s *storage) StoreAvatar(c *fiber.Ctx) error {
 		Name:          fileH.Filename,
 		Type:          "avatar",
 		Discriminator: disc,
+		ContentType:   fileH.Header.Get("Content-Type"),
 	}).Error
 	if err != nil {
 		return err
