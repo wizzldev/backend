@@ -40,6 +40,7 @@ func MustConnect() {
 		&models.EmailVerification{},
 		&models.ResetPassword{},
 		&models.User{},
+		&models.File{},
 	)
 
 	if err != nil {
