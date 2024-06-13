@@ -49,7 +49,7 @@ func (storage) WebPStream(file io.Reader, size uint) (io.Reader, error) {
 		return nil, err
 	}
 
-	if size >= 15 {
+	if size >= 15 && size <= 1024 {
 		img = resize.Resize(size, size, img, resize.Lanczos3)
 	}
 
