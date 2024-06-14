@@ -7,17 +7,13 @@ import (
 )
 
 func RegisterStorage(r fiber.Router) {
-	if err := handlers.Storage.Init(); err != nil {
-		panic(err)
-	}
-
-	file := r.Group("/files/:disc")
-	file.Get("/:filename", middlewares.StorageFileToLocal(), middlewares.StorageFilePermission(), handlers.Storage.Get)
+	file := r.Group("/files")
+	file.Get("/:disc/:filename", middlewares.StorageFileToLocal(), middlewares.StorageFilePermission(), handlers.Files.Get)
 	file.Use(HandleNotFoundError)
 
 	avatar := r.Group("/avatars")
-	avatar.Post("/upload", middlewares.Auth, handlers.Storage.StoreAvatar)
-	avatar.Get("/:disc.webp", middlewares.StorageFileToLocal(), handlers.Storage.GetAvatar)
+	avatar.Get("/:disc-s:size<int>.webp", middlewares.StorageFileToLocal(), handlers.Files.GetAvatar)
+	avatar.Get("/:disc.webp", middlewares.StorageFileToLocal(), handlers.Files.GetAvatar)
 	avatar.Use(HandleNotFoundError)
 
 	r.Use(HandleNotFoundError)

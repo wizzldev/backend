@@ -13,7 +13,7 @@ func RegisterAPI(r fiber.Router) {
 		r.Post("/register", requests.Use[requests.Register](), handlers.Auth.Register)
 		r.Get("/logout", handlers.Auth.Logout)
 		r.Post("/request-new-password", requests.Use[requests.NewPassword](), handlers.Auth.RequestNewPassword)
-		r.Get("/set-new-password/:token", requests.Use[requests.SetNewPassword](), handlers.Auth.IsPasswordResetExists)
+		r.Get("/set-new-password/:token", handlers.Auth.IsPasswordResetExists)
 		r.Post("/set-new-password/:token", requests.Use[requests.SetNewPassword](), handlers.Auth.SetNewPassword)
 		r.Get("/verify-email/:token", handlers.Auth.VerifyEmail)
 		r.Post("/request-new-email-verification", requests.Use[requests.Email](), handlers.Auth.RequestNewEmailVerification)
@@ -41,6 +41,7 @@ func RegisterAPI(r fiber.Router) {
 	msg := chat.Group("/:id<int>", middlewares.GroupAccess("id"))
 	{
 		msg.Get("/", handlers.Chat.Find)
+		msg.Post("/file", handlers.Chat.UploadFile)
 	}
 
 	chat.Post("/group", requests.Use[requests.NewGroup](), handlers.Group.New)

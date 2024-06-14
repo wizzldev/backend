@@ -6,13 +6,22 @@ import (
 	"github.com/wizzldev/chat/database/models"
 	"github.com/wizzldev/chat/pkg/utils"
 	"net/url"
+	"strings"
 )
 
 func StorageFileToLocal() fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		disc := c.Params("disc")
+		if strings.Contains(disc, "-") {
+			s := strings.SplitN(disc, "-", 2)
+			if len(s) == 2 {
+				disc = s[0]
+			}
+		}
+
 		var file models.File
 		database.DB.Model(&models.File{}).
-			Where("discriminator = ?", c.Params("disc")).
+			Where("discriminator = ?", disc).
 			Find(&file)
 
 		if file.ID < 1 {

@@ -4,27 +4,39 @@ import (
 	"fmt"
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
+	"github.com/wizzldev/chat/app/events"
 	"github.com/wizzldev/chat/app/requests"
+	"github.com/wizzldev/chat/app/services"
 	"github.com/wizzldev/chat/database"
 	"github.com/wizzldev/chat/database/models"
 	"github.com/wizzldev/chat/pkg/repository"
+	"github.com/wizzldev/chat/pkg/utils"
 	"github.com/wizzldev/chat/pkg/utils/role"
 	"github.com/wizzldev/chat/pkg/ws"
+	"net/url"
 	"slices"
 	"strconv"
 )
 
-type chat struct{}
+type chat struct {
+	*services.Storage
+	Cache *services.WSCache
+}
 
-var Chat chat
+var Chat = &chat{}
 
-func (chat) Contacts(c *fiber.Ctx) error {
+func (ch *chat) Init(store *services.Storage, wsCache *services.WSCache) {
+	ch.Storage = store
+	ch.Cache = wsCache
+}
+
+func (*chat) Contacts(c *fiber.Ctx) error {
 	page := c.QueryInt("page", 1)
 	data := repository.Group.GetContactsForUser(authUserID(c), page, authUser(c))
 	return c.JSON(data)
 }
 
-func (chat) PrivateMessage(c *fiber.Ctx) error {
+func (*chat) PrivateMessage(c *fiber.Ctx) error {
 	requestedUserID, err := c.ParamsInt("id", 0)
 	userID := uint(requestedUserID)
 
@@ -71,7 +83,7 @@ func (chat) PrivateMessage(c *fiber.Ctx) error {
 	})
 }
 
-func (chat) Search(c *fiber.Ctx) error {
+func (*chat) Search(c *fiber.Ctx) error {
 	v := validation[requests.SearchContacts](c)
 	rawPage := c.Query("page", "1")
 	page, err := strconv.Atoi(rawPage)
@@ -84,7 +96,7 @@ func (chat) Search(c *fiber.Ctx) error {
 	return c.JSON(users)
 }
 
-func (chat) Find(c *fiber.Ctx) error {
+func (*chat) Find(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id", 0)
 	if err != nil {
 		return err
@@ -119,7 +131,7 @@ func (chat) Find(c *fiber.Ctx) error {
 	})
 }
 
-func (chat) Connect(c *fiber.Ctx) error {
+func (ch *chat) Connect(c *fiber.Ctx) error {
 	serverID := c.Params("id")
 	serverIDint, _ := strconv.Atoi(serverID)
 
@@ -127,12 +139,56 @@ func (chat) Connect(c *fiber.Ctx) error {
 		return fmt.Errorf("you are not allowed to access this chat")
 	}
 
+	ch.openServer(serverID)
+	return websocket.New(ws.WebSocket[serverID].AddConnection)(c)
+}
+
+func (ch *chat) UploadFile(c *fiber.Ctx) error {
+	serverID := c.Params("id")
+	gID, err := strconv.Atoi(serverID)
+	if err != nil {
+		return err
+	}
+
+	fileH, err := c.FormFile("file")
+	if err != nil {
+		return err
+	}
+
+	token := utils.NewRandom().String(50)
+	file, err := ch.Store(fileH, token)
+	if err != nil {
+		return err
+	}
+
+	user := authUser(c)
+	msg := models.Message{
+		HasGroup:         models.HasGroupID(uint(gID)),
+		HasMessageSender: models.HasMessageSenderID(user.ID),
+	}
+	database.DB.Save(&msg)
+
+	ch.openServer(serverID)
+
+	err = events.DispatchMessage(serverID, ch.Cache.GetGroupMemberIDs(serverID), uint(gID), user, &ws.ClientMessage{
+		Content:  "",
+		Type:     "file:" + file.Type,
+		DataJSON: fmt.Sprintf(`{"fetchFrom": "/storage/files/%s/%s", "hasAccessToken": true, "accessToken": "%s"}`, file.Discriminator, url.QueryEscape(file.Name), token),
+	})
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(fiber.Map{
+		"status": "success",
+	})
+}
+
+func (*chat) openServer(serverID string) {
 	server, ok := ws.WebSocket[serverID]
 
 	if !ok {
 		server = ws.NewServer(serverID)
 		ws.WebSocket[serverID] = server
 	}
-
-	return websocket.New(ws.WebSocket[serverID].AddConnection)(c)
 }

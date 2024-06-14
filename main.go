@@ -23,13 +23,15 @@ func main() {
 		ErrorHandler: routes.ErrorHandler,
 	})
 
-	app.Use(recover.New())
-	app.Use(middlewares.CORS())
-
-	if configs.Env.Debug {
+	if !configs.Env.Debug {
+		app.Use(recover.New())
+	} else {
 		app.Use(logger.New())
 	}
 
+	app.Use(middlewares.CORS())
+
+	routes.MustInitApplication()
 	routes.RegisterStorage(app.Group("/storage"))
 	routes.WS(app.Group("/ws"))
 	routes.RegisterAPI(app)
