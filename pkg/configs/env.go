@@ -39,7 +39,7 @@ type env struct {
 	Frontend    string `env:"FRONTEND_URL"`
 	Debug       bool   `env:"DEBUG"`
 	ServerPort  string `env:"SERVER_PORT"`
-	MaxFileSize int    `env:"MAX_FILE_SIZE"`
+	MaxFileSize int64  `env:"MAX_FILE_SIZE"`
 	Database    databaseEnv
 	Session     session
 	Redis       redis
@@ -58,6 +58,8 @@ func LoadEnv() error {
 	if err != nil {
 		return fmt.Errorf("failed to parse environment variables: %w", err)
 	}
+
+	Env.MaxFileSize = Env.MaxFileSize * 1_000_000
 
 	return nil
 }
