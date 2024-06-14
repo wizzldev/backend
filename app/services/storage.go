@@ -126,7 +126,7 @@ func (s *Storage) StoreAvatar(fileH *multipart.FileHeader) (*models.File, error)
 
 	disc := s.NewDiscriminator()
 	path := s.getFileName(disc, fileH.Header.Get("Content-Type"))
-	dest, err := os.Open(filepath.Join(s.BasePath, path))
+	dest, err := os.Create(filepath.Join(s.BasePath, path))
 	defer dest.Close()
 	if err != nil {
 		return nil, err

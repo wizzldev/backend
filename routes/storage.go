@@ -12,7 +12,7 @@ func RegisterStorage(r fiber.Router) {
 	file.Use(HandleNotFoundError)
 
 	avatar := r.Group("/avatars")
-	avatar.Get("/:disc=s:size<int>.webp", middlewares.StorageFileToLocal(), handlers.Files.GetAvatar)
+	avatar.Get("/:disc-s:size<int>.webp", middlewares.StorageFileToLocal(), handlers.Files.GetAvatar)
 	avatar.Get("/:disc.webp", middlewares.StorageFileToLocal(), handlers.Files.GetAvatar)
 	avatar.Use(HandleNotFoundError)
 
