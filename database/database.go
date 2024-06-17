@@ -25,7 +25,7 @@ func MustConnect() {
 
 	log.Println("successfully connected to the database!")
 	if configs.Env.Debug {
-		db.Logger = logger.Default.LogMode(logger.Warn)
+		db.Logger = logger.Default.LogMode(logger.Info)
 	} else {
 		db.Logger = logger.Default.LogMode(logger.Error)
 	}
@@ -39,6 +39,7 @@ func MustConnect() {
 		&models.Block{},
 		&models.EmailVerification{},
 		&models.ResetPassword{},
+		&models.Bot{},
 		&models.User{},
 		&models.File{},
 	)

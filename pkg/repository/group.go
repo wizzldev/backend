@@ -18,6 +18,10 @@ func (group) FindPM(ID uint) *models.Group {
 	return FindModelBy[models.Group]([]string{"id", "is_private_message"}, []any{ID, true})
 }
 
+func (group) Find(ID uint) *models.Group {
+	return FindModelBy[models.Group]([]string{"id"}, []any{ID})
+}
+
 func (group) CanUserAccess(groupID uint, u *models.User) bool {
 	var count int64
 	err := database.DB.Raw(`

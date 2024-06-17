@@ -37,7 +37,7 @@ func (m *me) UploadProfileImage(c *fiber.Ctx) error {
 	}
 
 	user := authUser(c)
-	user.ImageURL = fmt.Sprintf("{api}/storage/avatars/%s.webp", file.Discriminator)
+	user.ImageURL = file.Discriminator + ".webp"
 	database.DB.Save(user)
 
 	return c.JSON(user)

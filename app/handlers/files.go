@@ -22,6 +22,10 @@ func (s *files) Get(c *fiber.Ctx) error {
 	return c.SendFile(s.LocalFile(c).Path)
 }
 
+func (s *files) GetInfo(c *fiber.Ctx) error {
+	return c.JSON(s.LocalFile(c))
+}
+
 func (s *files) GetAvatar(c *fiber.Ctx) error {
 	fileModel := s.LocalFile(c)
 	if fileModel.Type != "avatar" {

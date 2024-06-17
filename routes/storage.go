@@ -9,6 +9,7 @@ import (
 func RegisterStorage(r fiber.Router) {
 	file := r.Group("/files")
 	file.Get("/:disc/:filename", middlewares.StorageFileToLocal(), middlewares.StorageFilePermission(), handlers.Files.Get)
+	file.Get("/:disc/:filename/info", middlewares.StorageFileToLocal(), middlewares.StorageFilePermission(), handlers.Files.GetInfo)
 	file.Use(HandleNotFoundError)
 
 	avatar := r.Group("/avatars")
