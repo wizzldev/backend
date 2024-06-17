@@ -162,16 +162,10 @@ func (ch *chat) UploadFile(c *fiber.Ctx) error {
 	}
 
 	user := authUser(c)
-	msg := models.Message{
-		HasGroup:         models.HasGroupID(uint(gID)),
-		HasMessageSender: models.HasMessageSenderID(user.ID),
-	}
-	database.DB.Save(&msg)
-
 	ch.openServer(serverID)
 
 	err = events.DispatchMessage(serverID, ch.Cache.GetGroupMemberIDs(serverID), uint(gID), user, &ws.ClientMessage{
-		Content:  "",
+		Content:  "none",
 		Type:     "file:" + file.Type,
 		DataJSON: fmt.Sprintf(`{"fetchFrom": "/storage/files/%s/%s", "hasAccessToken": true, "accessToken": "%s"}`, file.Discriminator, url.QueryEscape(file.Name), token),
 	})

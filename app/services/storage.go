@@ -2,6 +2,7 @@ package services
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/kolesa-team/go-webp/decoder"
@@ -12,6 +13,9 @@ import (
 	"github.com/wizzldev/chat/database/models"
 	"github.com/wizzldev/chat/pkg/configs"
 	"github.com/wizzldev/chat/pkg/utils"
+	"image"
+	"image/gif"
+	"image/jpeg"
 	"image/png"
 	"io"
 	"mime"
@@ -36,8 +40,28 @@ func NewStorage() (*Storage, error) {
 	return s, nil
 }
 
-func (*Storage) WebPFromFormFile(file io.Reader, dest *os.File) error {
-	img, err := png.Decode(file)
+func (*Storage) WebPFromFormFile(file io.Reader, dest *os.File, contentType string) error {
+	var (
+		img image.Image
+		err error
+	)
+
+	switch contentType {
+	case "image/png":
+		img, err = png.Decode(file)
+		break
+	case "image/jpeg":
+		img, err = jpeg.Decode(file)
+		break
+	case "image/gif":
+		img, err = gif.Decode(file)
+		break
+	case "image/webp":
+		img, err = webp.Decode(file, &decoder.Options{})
+	default:
+		img, err = nil, errors.New("unsupported image type")
+	}
+
 	if err != nil {
 		return err
 	}
@@ -125,14 +149,15 @@ func (s *Storage) StoreAvatar(fileH *multipart.FileHeader) (*models.File, error)
 	}
 
 	disc := s.NewDiscriminator()
-	path := s.getFileName(disc, fileH.Header.Get("Content-Type"))
+	cType := fileH.Header.Get("Content-Type")
+	path := s.getFileName(disc, cType)
 	dest, err := os.Create(filepath.Join(s.BasePath, path))
 	defer dest.Close()
 	if err != nil {
 		return nil, err
 	}
 
-	err = s.WebPFromFormFile(file, dest)
+	err = s.WebPFromFormFile(file, dest, cType)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +167,8 @@ func (s *Storage) StoreAvatar(fileH *multipart.FileHeader) (*models.File, error)
 		Name:          fileH.Filename,
 		Type:          "avatar",
 		Discriminator: disc,
-		ContentType:   fileH.Header.Get("Content-Type"),
+		ContentType:   cType,
+		Size:          fileH.Size,
 	}
 	err = database.DB.Create(&fileModel).Error
 
@@ -192,6 +218,7 @@ func (s *Storage) Store(fileH *multipart.FileHeader, token ...string) (*models.F
 		Discriminator: disc,
 		Type:          "file",
 		ContentType:   fileH.Header.Get("Content-Type"),
+		Size:          fileH.Size,
 	}
 
 	if len(token) > 0 {
@@ -205,4 +232,22 @@ func (s *Storage) Store(fileH *multipart.FileHeader, token ...string) (*models.F
 	}
 
 	return &fileModel, nil
+}
+
+func (s *Storage) RemoveByDisc(disc string) error {
+	var file models.File
+	database.DB.Model(&models.File{}).Where("discriminator = ?", disc).First(&file)
+
+	if file.ID < 1 {
+		return errors.New("file not found")
+	}
+
+	err := os.Remove(filepath.Join(s.BasePath, file.Path))
+	if err != nil {
+		return err
+	}
+
+	database.DB.Delete(&file)
+
+	return nil
 }

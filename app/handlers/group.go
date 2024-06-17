@@ -4,17 +4,24 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/lib/pq"
 	"github.com/wizzldev/chat/app/requests"
+	"github.com/wizzldev/chat/app/services"
 	"github.com/wizzldev/chat/database"
 	"github.com/wizzldev/chat/database/models"
 	"github.com/wizzldev/chat/pkg/repository"
 	"github.com/wizzldev/chat/pkg/utils/role"
 )
 
-type group struct{}
+type group struct {
+	*services.Storage
+}
 
-var Group group
+var Group = &group{}
 
-func (group) New(c *fiber.Ctx) error {
+func (g *group) Init(store *services.Storage) {
+	g.Storage = store
+}
+
+func (*group) New(c *fiber.Ctx) error {
 	data := validation[requests.NewGroup](c)
 
 	userIDs := repository.IDsExists[models.User](data.UserIDs)
@@ -33,7 +40,7 @@ func (group) New(c *fiber.Ctx) error {
 	}
 
 	g := models.Group{
-		ImageURL:         "https://images.unsplash.com/photo-1493612276216-ee3925520721?q=80&w=1000&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cmFuZG9tfGVufDB8fDB8fHww",
+		ImageURL:         "group.webp",
 		Name:             data.Name,
 		Roles:            roles,
 		IsPrivateMessage: false,
@@ -57,7 +64,7 @@ func (group) New(c *fiber.Ctx) error {
 	})
 }
 
-func (group) GetInfo(c *fiber.Ctx) error {
+func (*group) GetInfo(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil {
 		return err
@@ -68,7 +75,7 @@ func (group) GetInfo(c *fiber.Ctx) error {
 	return c.JSON(g)
 }
 
-func (group) GetAllRoles(c *fiber.Ctx) error {
+func (*group) GetAllRoles(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"roles": role.All(),
 		"recommended": []role.Role{
@@ -82,4 +89,31 @@ func (group) GetAllRoles(c *fiber.Ctx) error {
 			role.InviteUser,
 		},
 	})
+}
+
+func (g *group) UploadGroupImage(c *fiber.Ctx) error {
+	fileH, err := c.FormFile("image")
+	if err != nil {
+		return err
+	}
+
+	file, err := g.Storage.StoreAvatar(fileH)
+	if err != nil {
+		return err
+	}
+
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
+	group := repository.Group.Find(uint(id))
+	if group.ID < 1 {
+		return fiber.ErrNotFound
+	}
+
+	group.ImageURL = file.Discriminator + ".webp"
+	database.DB.Save(group)
+
+	return c.JSON(group)
 }

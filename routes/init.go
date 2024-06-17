@@ -13,5 +13,6 @@ func MustInitApplication() {
 
 	handlers.Chat.Init(store, services.NewWSCache())
 	handlers.Files.Init(store)
+	handlers.Group.Init(store)
 	handlers.Me.Init(store)
 }

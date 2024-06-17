@@ -56,6 +56,6 @@ func StorageFilePermission() fiber.Handler {
 }
 
 func canAccessFile(c *fiber.Ctx, token string) bool {
-	rawCode := c.Request().Header.Peek("File-Access-Token")
-	return string(rawCode) == token
+	rawCode := c.Request().Header.Peek("X-File-Access-Token")
+	return string(rawCode) == token || c.Query("access_token") == token
 }
