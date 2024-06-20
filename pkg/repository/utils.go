@@ -6,6 +6,12 @@ import (
 	"strings"
 )
 
+type Pagination[M interface{}] struct {
+	Data       *[]M   `json:"data"`
+	NextCursor string `json:"next_cursor"`
+	Previous   string `json:"previous_cursor"`
+}
+
 func FindModelBy[M any](fields []string, values []any) *M {
 	var model M
 
