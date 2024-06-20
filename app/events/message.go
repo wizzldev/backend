@@ -1,6 +1,7 @@
 package events
 
 import (
+	"encoding/json"
 	"github.com/wizzldev/chat/database"
 	"github.com/wizzldev/chat/database/models"
 	"github.com/wizzldev/chat/pkg/logger"
@@ -18,7 +19,17 @@ type ChatMessage struct {
 	UpdatedAt time.Time   `json:"updated_at"`
 }
 
+type DataJSON struct {
+	ReplyID uint `json:"reply_id"`
+}
+
 func DispatchMessage(wsID string, userIDs []uint, gID uint, user *models.User, msg *ws.ClientMessage) error {
+	var dataJSON DataJSON
+	err := json.Unmarshal([]byte(msg.DataJSON), &dataJSON)
+	if err != nil {
+		return err
+	}
+
 	message := models.Message{
 		HasGroup: models.HasGroup{
 			GroupID: gID,
@@ -29,6 +40,9 @@ func DispatchMessage(wsID string, userIDs []uint, gID uint, user *models.User, m
 		Content:  msg.Content,
 		Type:     msg.Type,
 		DataJSON: msg.DataJSON,
+	}
+	if dataJSON.ReplyID > 0 {
+		message.ReplyID = dataJSON.ReplyID
 	}
 	database.DB.Create(&message)
 

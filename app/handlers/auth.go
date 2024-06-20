@@ -103,7 +103,7 @@ func (a auth) RequestNewEmailVerification(c *fiber.Ctx) error {
 	}
 
 	if user.EmailVerifiedAt != nil {
-		return fiber.NewError(fiber.StatusConflict, "Email verification request already sent")
+		return fiber.NewError(fiber.StatusConflict, "Your email address is already verified")
 	}
 
 	emailVerification := repository.EmailVerification.FindLatestForUser(user.ID)
@@ -170,7 +170,11 @@ func (a auth) RequestNewPassword(c *fiber.Ctx) error {
 func (auth) SetNewPassword(c *fiber.Ctx) error {
 	newPasswordRequest := validation[requests.SetNewPassword](c)
 	token := c.Params("token")
+
 	user := repository.ResetPassword.FindUserByToken(token)
+	if user.ID < 1 {
+		return fiber.NewError(fiber.StatusNotFound, "Invalid or expired token")
+	}
 
 	pass, err := utils.NewPassword(newPasswordRequest.Password).Hash()
 

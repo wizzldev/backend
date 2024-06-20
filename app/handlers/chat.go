@@ -123,12 +123,30 @@ func (*chat) Find(c *fiber.Ctx) error {
 		}
 	}
 
-	latestMessages := repository.Message.Latest(uint(id))
+	pagination, err := repository.Message.CursorPaginate(uint(id), c.Query("cursor"))
+	if err != nil {
+		return err
+	}
+
 	return c.JSON(fiber.Map{
 		"group":      g,
-		"messages":   latestMessages,
+		"messages":   pagination,
 		"user_roles": roles,
 	})
+}
+
+func (*chat) Messages(c *fiber.Ctx) error {
+	id, err := c.ParamsInt("id", 0)
+	if err != nil {
+		return err
+	}
+
+	pagination, err := repository.Message.CursorPaginate(uint(id), c.Query("cursor"))
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(pagination)
 }
 
 func (ch *chat) Connect(c *fiber.Ctx) error {

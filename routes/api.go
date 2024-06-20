@@ -41,6 +41,7 @@ func RegisterAPI(r fiber.Router) {
 	msg := chat.Group("/:id<int>", middlewares.GroupAccess("id"))
 	{
 		msg.Get("/", handlers.Chat.Find)
+		msg.Get("/paginate", handlers.Chat.Messages)
 		msg.Post("/file", handlers.Chat.UploadFile)
 	}
 
