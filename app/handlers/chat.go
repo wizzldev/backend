@@ -186,6 +186,7 @@ func (ch *chat) UploadFile(c *fiber.Ctx) error {
 		Content:  "none",
 		Type:     "file:" + file.Type,
 		DataJSON: fmt.Sprintf(`{"fetchFrom": "/storage/files/%s/%s", "hasAccessToken": true, "accessToken": "%s"}`, file.Discriminator, url.QueryEscape(file.Name), token),
+		HookID:   c.Query("hook_id"),
 	})
 	if err != nil {
 		return err
