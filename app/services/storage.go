@@ -150,9 +150,13 @@ func (s *Storage) StoreAvatar(fileH *multipart.FileHeader) (*models.File, error)
 
 	disc := s.NewDiscriminator()
 	cType := fileH.Header.Get("Content-Type")
-	path := s.getFileName(disc, cType)
+	path := s.getFileName(disc, "image/webp")
 	dest, err := os.Create(filepath.Join(s.BasePath, path))
 	defer dest.Close()
+	if err != nil {
+		return nil, err
+	}
+	fileInfo, err := dest.Stat()
 	if err != nil {
 		return nil, err
 	}
@@ -164,11 +168,11 @@ func (s *Storage) StoreAvatar(fileH *multipart.FileHeader) (*models.File, error)
 
 	fileModel := models.File{
 		Path:          path,
-		Name:          fileH.Filename,
+		Name:          "",
 		Type:          "avatar",
 		Discriminator: disc,
-		ContentType:   cType,
-		Size:          fileH.Size,
+		ContentType:   "image/webp",
+		Size:          fileInfo.Size(),
 	}
 	err = database.DB.Create(&fileModel).Error
 

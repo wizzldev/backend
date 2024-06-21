@@ -10,6 +10,20 @@ type message struct{}
 
 var Message message
 
+func (message) FindOne(messageID uint) *models.Message {
+	var msg models.Message
+
+	_ = database.DB.Model(&models.Message{}).
+		Preload("Sender").
+		Preload("Reply.Sender").
+		Preload("MessageLikes.User").
+		Where("id = ?", messageID).
+		Order("created_at desc").
+		First(&msg).Error
+
+	return &msg
+}
+
 func (message) Latest(gID uint) (*[]models.Message, string, string) {
 	var messages []models.Message
 

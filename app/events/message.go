@@ -5,18 +5,20 @@ import (
 	"github.com/wizzldev/chat/database"
 	"github.com/wizzldev/chat/database/models"
 	"github.com/wizzldev/chat/pkg/logger"
+	"github.com/wizzldev/chat/pkg/repository"
 	"github.com/wizzldev/chat/pkg/ws"
 	"time"
 )
 
 type ChatMessage struct {
-	MessageID uint        `json:"id"`
-	Sender    models.User `json:"sender"`
-	Content   string      `json:"content"`
-	Type      string      `json:"type"`
-	DataJSON  string      `json:"data_json"`
-	CreatedAt time.Time   `json:"created_at"`
-	UpdatedAt time.Time   `json:"updated_at"`
+	MessageID uint            `json:"id"`
+	Sender    models.User     `json:"sender"`
+	Content   string          `json:"content"`
+	Type      string          `json:"type"`
+	DataJSON  string          `json:"data_json"`
+	CreatedAt time.Time       `json:"created_at"`
+	UpdatedAt time.Time       `json:"updated_at"`
+	Reply     *models.Message `json:"reply"`
 }
 
 type DataJSON struct {
@@ -30,7 +32,7 @@ func DispatchMessage(wsID string, userIDs []uint, gID uint, user *models.User, m
 		return err
 	}
 
-	message := models.Message{
+	message := &models.Message{
 		HasGroup: models.HasGroup{
 			GroupID: gID,
 		},
@@ -43,8 +45,11 @@ func DispatchMessage(wsID string, userIDs []uint, gID uint, user *models.User, m
 	}
 	if dataJSON.ReplyID > 0 {
 		message.ReplyID = dataJSON.ReplyID
+		message.DataJSON = "{}"
 	}
-	database.DB.Create(&message)
+
+	database.DB.Create(message)
+	message = repository.Message.FindOne(message.ID)
 
 	sentTo := ws.WebSocket[wsID].BroadcastToUsers(userIDs, ws.Message{
 		Event: "message",
@@ -56,6 +61,7 @@ func DispatchMessage(wsID string, userIDs []uint, gID uint, user *models.User, m
 			DataJSON:  message.DataJSON,
 			CreatedAt: message.CreatedAt,
 			UpdatedAt: message.UpdatedAt,
+			Reply:     message.Reply,
 		},
 		HookID: msg.HookID,
 	})

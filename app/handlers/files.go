@@ -39,7 +39,7 @@ func (s *files) GetAvatar(c *fiber.Ctx) error {
 
 	file, err := os.Open(fileModel.Path)
 	if err != nil {
-		return err
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to open file")
 	}
 
 	stream, err := s.WebPStream(file, uint(size))
@@ -48,7 +48,7 @@ func (s *files) GetAvatar(c *fiber.Ctx) error {
 	}
 
 	c.Set("Content-Type", "image/webp")
-	c.Set("Content-Disposition", "inline; filename=\""+fileModel.Name+"\"")
+	c.Set("Content-Disposition", "inline; filename=\"avatar.webp\"")
 	c.Set("Cache-Control", "public, max-age=3600")
 	c.Set("Last-Modified", fileModel.UpdatedAt.Format(http.TimeFormat))
 	c.Set("Expires", time.Now().Add(24*time.Hour).Format(http.TimeFormat))
