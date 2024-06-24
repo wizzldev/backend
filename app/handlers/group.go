@@ -92,6 +92,16 @@ func (*group) GetAllRoles(c *fiber.Ctx) error {
 }
 
 func (g *group) UploadGroupImage(c *fiber.Ctx) error {
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
+	group := repository.Group.Find(uint(id))
+	if group.ID < 1 || group.IsPrivateMessage {
+		return fiber.ErrNotFound
+	}
+
 	fileH, err := c.FormFile("image")
 	if err != nil {
 		return err
@@ -100,16 +110,6 @@ func (g *group) UploadGroupImage(c *fiber.Ctx) error {
 	file, err := g.Storage.StoreAvatar(fileH)
 	if err != nil {
 		return err
-	}
-
-	id, err := c.ParamsInt("id")
-	if err != nil {
-		return err
-	}
-
-	group := repository.Group.Find(uint(id))
-	if group.ID < 1 {
-		return fiber.ErrNotFound
 	}
 
 	group.ImageURL = file.Discriminator + ".webp"
