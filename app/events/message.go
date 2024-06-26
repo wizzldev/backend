@@ -44,7 +44,7 @@ func DispatchMessage(wsID string, userIDs []uint, gID uint, user *models.User, m
 		DataJSON: msg.DataJSON,
 	}
 	if dataJSON.ReplyID > 0 {
-		message.ReplyID = dataJSON.ReplyID
+		message.ReplyID = &dataJSON.ReplyID
 		message.DataJSON = "{}"
 	}
 

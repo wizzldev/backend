@@ -33,6 +33,8 @@ func MessageActionHandler(s *ws.Server, conn *ws.Connection, userID uint, msg *w
 		return events.DispatchMessage(s.ID, members, uint(gID), user, msg)
 	case "message.like":
 		return events.DispatchMessageLike(s.ID, members, uint(gID), user, msg)
+	case "message.delete":
+		return events.DispatchMessageDelete(s.ID, members, uint(gID), user, msg)
 	default:
 		conn.Send(ws.Message{
 			Event: "error",
