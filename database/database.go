@@ -40,6 +40,7 @@ func MustConnect() {
 		&models.EmailVerification{},
 		&models.ResetPassword{},
 		&models.Bot{},
+		&models.GroupUser{},
 		&models.User{},
 		&models.File{},
 	)
