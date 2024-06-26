@@ -28,7 +28,7 @@ func HasUserID(id uint) HasUser {
 }
 
 type HasMessageReply struct {
-	ReplyID uint     `json:"-" gorm:"message_id;default:NULL"`
+	ReplyID *uint    `json:"-" gorm:"message_id;default:NULL"`
 	Reply   *Message `json:"reply,omitempty" gorm:"constraint:OnDelete:CASCADE;foreignKey:ReplyID"`
 }
 
