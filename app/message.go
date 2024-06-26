@@ -11,7 +11,6 @@ import (
 var cache = services.NewWSCache()
 
 func MessageActionHandler(s *ws.Server, conn *ws.Connection, userID uint, msg *ws.ClientMessage) error {
-
 	user, err := cache.GetUser(userID)
 
 	if err != nil {

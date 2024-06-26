@@ -8,6 +8,10 @@ import (
 )
 
 func RegisterAPI(r fiber.Router) {
+	r.Get("/", func(c *fiber.Ctx) error {
+		return c.SendFile("./pkg/configs/build.json")
+	})
+
 	{
 		r.Post("/login", requests.Use[requests.Login](), middlewares.NewAuthLimiter(), handlers.Auth.Login)
 		r.Post("/register", requests.Use[requests.Register](), handlers.Auth.Register)

@@ -3,16 +3,19 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/lib/pq"
+	"github.com/wizzldev/chat/app/events"
 	"github.com/wizzldev/chat/app/requests"
 	"github.com/wizzldev/chat/app/services"
 	"github.com/wizzldev/chat/database"
 	"github.com/wizzldev/chat/database/models"
 	"github.com/wizzldev/chat/pkg/repository"
 	"github.com/wizzldev/chat/pkg/utils/role"
+	"github.com/wizzldev/chat/pkg/ws"
 )
 
 type group struct {
 	*services.Storage
+	Cache *services.WSCache
 }
 
 var Group = &group{}
@@ -92,6 +95,8 @@ func (*group) GetAllRoles(c *fiber.Ctx) error {
 }
 
 func (g *group) UploadGroupImage(c *fiber.Ctx) error {
+	serverID := c.Params("id")
+
 	id, err := c.ParamsInt("id")
 	if err != nil {
 		return err
@@ -114,6 +119,17 @@ func (g *group) UploadGroupImage(c *fiber.Ctx) error {
 
 	group.ImageURL = file.Discriminator + ".webp"
 	database.DB.Save(group)
+
+	Chat.openServer(serverID)
+	err = events.DispatchMessage(serverID, g.Cache.GetGroupMemberIDs(serverID), uint(id), authUser(c), &ws.ClientMessage{
+		Type:     "update.image",
+		HookID:   c.Query("hook_id"),
+		DataJSON: "{}",
+	})
+
+	if err != nil {
+		return err
+	}
 
 	return c.JSON(group)
 }
