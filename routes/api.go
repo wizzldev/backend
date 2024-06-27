@@ -5,6 +5,7 @@ import (
 	"github.com/wizzldev/chat/app/handlers"
 	"github.com/wizzldev/chat/app/requests"
 	"github.com/wizzldev/chat/pkg/middlewares"
+	"time"
 )
 
 func RegisterAPI(r fiber.Router) {
@@ -26,6 +27,7 @@ func RegisterAPI(r fiber.Router) {
 	auth := r.Group("/", middlewares.Auth)
 	{
 		auth.Get("/me", handlers.Me.Hello)
+		auth.Put("/me", middlewares.NewSimpleLimiter(3, 10*time.Minute, "Too many modifications, try again later"), requests.Use[requests.UpdateMe](), handlers.Me.Update)
 		auth.Post("/me/profile-image", handlers.Me.UploadProfileImage)
 	}
 

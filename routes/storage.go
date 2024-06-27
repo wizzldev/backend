@@ -13,6 +13,17 @@ func RegisterStorage(r fiber.Router) {
 	file.Use(HandleNotFoundError)
 
 	avatar := r.Group("/avatars")
+	avatar.Post("/upload", func(c *fiber.Ctx) error {
+		fh, err := c.FormFile("image")
+		if err != nil {
+			return err
+		}
+		f, err := handlers.Files.StoreAvatar(fh)
+		if err != nil {
+			return err
+		}
+		return c.SendString(f.Discriminator)
+	})
 	avatar.Get("/:disc-s:size<int>.webp", middlewares.StorageFileToLocal(), handlers.Files.GetAvatar)
 	avatar.Get("/:disc.webp", middlewares.StorageFileToLocal(), handlers.Files.GetAvatar)
 	avatar.Use(HandleNotFoundError)
