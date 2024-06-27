@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"github.com/wizzldev/chat/app/requests"
 	"github.com/wizzldev/chat/app/services"
 	"github.com/wizzldev/chat/database"
 	"strings"
@@ -24,6 +25,15 @@ func (*me) Hello(c *fiber.Ctx) error {
 		"message": fmt.Sprintf("Hello %s", user.FirstName),
 		"user":    user,
 	})
+}
+
+func (*me) Update(c *fiber.Ctx) error {
+	user := authUser(c)
+	valid := validation[requests.UpdateMe](c)
+	user.FirstName = valid.FirstName
+	user.LastName = valid.LastName
+	database.DB.Save(user)
+	return c.JSON(user)
 }
 
 func (m *me) UploadProfileImage(c *fiber.Ctx) error {

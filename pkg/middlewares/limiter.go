@@ -8,13 +8,28 @@ import (
 	"time"
 )
 
-func NewAuthLimiter() fiber.Handler {
+func NewSimpleLimiter(max int, expiration time.Duration, message string, keyGenerator ...func(*fiber.Ctx) string) fiber.Handler {
+	var gen = func(c *fiber.Ctx) string {
+		return c.IP()
+	}
+
+	if len(keyGenerator) == 1 {
+		gen = keyGenerator[0]
+	}
+
 	return limiter.New(limiter.Config{
-		Max:        10,
-		Expiration: 5 * time.Minute,
-		KeyGenerator: func(c *fiber.Ctx) string {
-			req := c.Locals(utils.RequestValidation).(*requests.Login)
-			return req.Email
+		Max:        max,
+		Expiration: expiration,
+		LimitReached: func(c *fiber.Ctx) error {
+			return fiber.NewError(fiber.StatusTooManyRequests, message)
 		},
+		KeyGenerator: gen,
+	})
+}
+
+func NewAuthLimiter() fiber.Handler {
+	return NewSimpleLimiter(10, 10*time.Minute, "Too many attempts, try again later", func(c *fiber.Ctx) string {
+		req := c.Locals(utils.RequestValidation).(*requests.Login)
+		return req.Email
 	})
 }
