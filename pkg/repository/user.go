@@ -26,6 +26,12 @@ func (user) IsEmailExists(email string) bool {
 	return IsExists[models.User]([]string{"email"}, []any{email})
 }
 
+func (user) IsIPAllowed(uID uint, ip string) bool {
+	var count int64
+	database.DB.Model(&models.AllowedIP{}).Where("user_id = ? and ip = ? and active = ?", uID, ip, true).Count(&count)
+	return count > 0
+}
+
 func (user) IsBlocked(blockerID uint, blockedID uint) bool {
 	return IsExists[models.Block]([]string{"user_id", "blocked_user_id"}, []any{blockerID, blockedID})
 }

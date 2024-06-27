@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -20,7 +21,7 @@ type auth struct{}
 
 var Auth auth
 
-func (auth) Login(c *fiber.Ctx) error {
+func (a auth) Login(c *fiber.Ctx) error {
 	sess, err := middlewares.Session(c)
 	if err != nil {
 		return err
@@ -42,10 +43,26 @@ func (auth) Login(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusUnauthorized, "Please verify your email before login")
 	}
 
+	if !repository.User.IsIPAllowed(user.ID, c.IP()) {
+		a.sendIPVerification(user, c.IP())
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"show_ip_modal": true,
+		})
+	}
+
 	sess.Set(utils.SessionAuthUserID, user.ID)
+	sessID := sess.ID()
+
+	database.DB.Create(&models.Session{
+		HasUser:   models.HasUserID(user.ID),
+		IP:        c.IP(),
+		SessionID: sessID,
+		Agent:     string(c.Request().Header.Peek("User-Agent")),
+	})
+
 	return c.JSON(fiber.Map{
 		"user":    user,
-		"session": sess.ID(),
+		"session": "Bearer " + sessID,
 	})
 }
 
@@ -80,8 +97,14 @@ func (a auth) Register(c *fiber.Ctx) error {
 		return err
 	}
 
+	database.DB.Create(&models.AllowedIP{
+		HasUser: models.HasUserID(user.ID),
+		IP:      c.IP(),
+		Active:  true,
+	})
+
 	return c.JSON(fiber.Map{
-		"message": "Please verify your email before login",
+		"show_verification_modal": true,
 	})
 }
 
@@ -91,6 +114,10 @@ func (auth) Logout(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+
+	database.DB.Delete(&models.Session{
+		SessionID: sess.ID(),
+	})
 
 	return sess.Destroy()
 }
@@ -205,9 +232,24 @@ func (auth) IsPasswordResetExists(c *fiber.Ctx) error {
 	})
 }
 
+func (auth) AllowIP(c *fiber.Ctx) error {
+	token := c.Params("token")
+	var ip models.AllowedIP
+	database.DB.Model(&models.AllowedIP{}).Where("token = ?", token).First(&ip)
+	if ip.ID < 1 {
+		return fiber.NewError(fiber.StatusNotFound, "IP not found")
+	}
+	ip.Verification = ""
+	ip.Active = true
+	database.DB.Save(&ip)
+	return c.JSON(fiber.Map{
+		"allowed": true,
+	})
+}
+
 // helpers
 func (auth) sendVerificationEmail(user *models.User) error {
-	token := utils.NewRandom().String(30)
+	token := strconv.Itoa(int(user.ID)) + utils.NewRandom().String(30)
 
 	err := database.DB.Create(&models.EmailVerification{
 		HasUser: models.HasUserID(user.ID),
@@ -234,7 +276,7 @@ func (auth) sendVerificationEmail(user *models.User) error {
 }
 
 func (auth) sendResetPasswordEmail(user *models.User) error {
-	token := utils.NewRandom().String(30)
+	token := strconv.Itoa(int(user.ID)) + utils.NewRandom().String(30)
 	resetPassword := models.ResetPassword{
 		HasUser: models.HasUser{
 			UserID: user.ID,
@@ -260,4 +302,28 @@ func (auth) sendResetPasswordEmail(user *models.User) error {
 	}()
 
 	return nil
+}
+
+func (auth) sendIPVerification(user *models.User, ip string) {
+	token := strconv.Itoa(int(user.ID)) + utils.NewRandom().String(30)
+	ipVerification := models.AllowedIP{
+		HasUser:      models.HasUserID(user.ID),
+		IP:           ip,
+		Active:       false,
+		Verification: token,
+	}
+	database.DB.Create(&ipVerification)
+
+	go func() {
+		verifyIPURL := fmt.Sprintf("%s/ip-verification/%s", configs.Env.Frontend, token)
+		mail := utils.NewMail(configs.Env.Email.SenderAddress, user.Email)
+		mail.Subject("Reset your password")
+		mail.TemplateBody("reset-password", map[string]string{
+			"firstName":   cases.Title(language.English).String(user.FirstName),
+			"ip":          ip,
+			"verifyIPURL": verifyIPURL,
+		}, fmt.Sprintf("Click <a href=\"%s\">here</a> to verify that IP address", verifyIPURL))
+		err := mail.Send()
+		fmt.Println("Email sent with err:", err)
+	}()
 }

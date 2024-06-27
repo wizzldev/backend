@@ -15,6 +15,7 @@ func RegisterAPI(r fiber.Router) {
 
 	{
 		r.Post("/login", requests.Use[requests.Login](), middlewares.NewAuthLimiter(), handlers.Auth.Login)
+		r.Get("/allow-ip/:token", handlers.Auth.AllowIP)
 		r.Post("/register", requests.Use[requests.Register](), handlers.Auth.Register)
 		r.Get("/logout", handlers.Auth.Logout)
 		r.Post("/request-new-password", requests.Use[requests.NewPassword](), handlers.Auth.RequestNewPassword)
@@ -31,9 +32,20 @@ func RegisterAPI(r fiber.Router) {
 		auth.Post("/me/profile-image", handlers.Me.UploadProfileImage)
 	}
 
+	security := auth.Group("/security")
+	{
+		security.Get("/sessions", handlers.Security.Sessions)
+		security.Delete("/sessions", handlers.Security.DestroySessions)
+		security.Delete("/sessions/:id<int>", handlers.Security.DestroySession)
+		security.Get("/ips", handlers.Security.IPs)
+		security.Delete("/ips/:id<int>", handlers.Security.DestroyIP)
+		security.Use(HandleNotFoundError)
+	}
+
 	users := auth.Group("/users")
 	{
 		users.Post("/findByEmail", requests.Use[requests.Email](), handlers.Users.FindByEmail)
+		users.Use(HandleNotFoundError)
 	}
 
 	chat := auth.Group("/chat")
@@ -50,6 +62,7 @@ func RegisterAPI(r fiber.Router) {
 		msg.Post("/group-image", handlers.Group.UploadGroupImage)
 		msg.Get("/paginate", handlers.Chat.Messages)
 		msg.Post("/file", handlers.Chat.UploadFile)
+		msg.Use(HandleNotFoundError)
 	}
 
 	chat.Post("/group", requests.Use[requests.NewGroup](), handlers.Group.New)
@@ -57,8 +70,6 @@ func RegisterAPI(r fiber.Router) {
 	_ = chat.Group("/group/:groupId")
 
 	auth.Use(HandleNotFoundError)
-	users.Use(HandleNotFoundError)
 	chat.Use(HandleNotFoundError)
-	msg.Use(HandleNotFoundError)
 	r.Use(HandleNotFoundError)
 }

@@ -41,6 +41,8 @@ func MustConnect() {
 		&models.ResetPassword{},
 		&models.Bot{},
 		&models.GroupUser{},
+		&models.AllowedIP{},
+		&models.Session{},
 		&models.User{},
 		&models.File{},
 	)
