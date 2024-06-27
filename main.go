@@ -21,6 +21,10 @@ func main() {
 
 	app := fiber.New(fiber.Config{
 		ErrorHandler: routes.ErrorHandler,
+		Prefork:      true,
+		ServerHeader: "Wizzl",
+		AppName:      "Wizzl v1.0.0",
+		ProxyHeader:  fiber.HeaderXForwardedFor,
 	})
 
 	if !configs.Env.Debug {
