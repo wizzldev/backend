@@ -22,7 +22,7 @@ func (security) Sessions(c *fiber.Ctx) error {
 
 	sessions := repository.Session.AllForUser(authUserID(c))
 
-	for _, s := range *sessions {
+	for _, s := range sessions {
 		if s.SessionID == sessID {
 			s.Current = true
 			break
@@ -37,10 +37,10 @@ func (security) DestroySessions(c *fiber.Ctx) error {
 	sessions := repository.Session.AllForUser(user.ID)
 
 	var del []models.Session
-	for _, session := range *sessions {
+	for _, session := range sessions {
 		err := rdb.Redis.Delete(session.SessionID)
 		if err == nil {
-			del = append(del, session)
+			del = append(del, *session)
 		}
 	}
 
@@ -49,4 +49,32 @@ func (security) DestroySessions(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"status": "ok",
 	})
+}
+
+func (security) DestroySession(c *fiber.Ctx) error {
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
+	userID := authUserID(c)
+	sess := repository.Session.FindForUser(userID, uint(id))
+
+	err = rdb.Redis.Delete(sess.SessionID)
+	if err != nil {
+		return err
+	}
+
+	database.DB.Delete(sess)
+	return c.JSON(fiber.Map{
+		"status": "ok",
+	})
+}
+
+func (security) IPs(c *fiber.Ctx) error {
+	return c.JSON(repository.IPs.AllForUser(authUserID(c)))
+}
+
+func (security) DestroyIP(c *fiber.Ctx) error {
+	return nil
 }

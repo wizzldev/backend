@@ -36,6 +36,9 @@ func RegisterAPI(r fiber.Router) {
 	{
 		security.Get("/sessions", handlers.Security.Sessions)
 		security.Delete("/sessions", handlers.Security.DestroySessions)
+		security.Delete("/sessions/:id<int>", handlers.Security.DestroySession)
+		security.Get("/ips", handlers.Security.IPs)
+		security.Delete("/ips/:id<int>", handlers.Security.DestroyIP)
 		security.Use(HandleNotFoundError)
 	}
 
