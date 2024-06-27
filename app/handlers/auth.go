@@ -235,7 +235,7 @@ func (auth) IsPasswordResetExists(c *fiber.Ctx) error {
 func (auth) AllowIP(c *fiber.Ctx) error {
 	token := c.Params("token")
 	var ip models.AllowedIP
-	database.DB.Model(&models.AllowedIP{}).Where("token = ?", token).First(&ip)
+	database.DB.Model(&models.AllowedIP{}).Where("verification = ?", token).First(&ip)
 	if ip.ID < 1 {
 		return fiber.NewError(fiber.StatusNotFound, "IP not found")
 	}
