@@ -317,8 +317,8 @@ func (auth) sendIPVerification(user *models.User, ip string) {
 	go func() {
 		verifyIPURL := fmt.Sprintf("%s/ip-verification/%s", configs.Env.Frontend, token)
 		mail := utils.NewMail(configs.Env.Email.SenderAddress, user.Email)
-		mail.Subject("Reset your password")
-		mail.TemplateBody("reset-password", map[string]string{
+		mail.Subject("IP Verification")
+		mail.TemplateBody("ip", map[string]string{
 			"firstName":   cases.Title(language.English).String(user.FirstName),
 			"ip":          ip,
 			"verifyIPURL": verifyIPURL,
