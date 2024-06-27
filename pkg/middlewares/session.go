@@ -14,7 +14,7 @@ import (
 var store = session.New(session.Config{
 	Expiration: time.Duration(configs.Env.Session.LifespanSeconds) * time.Second,
 	KeyGenerator: func() string {
-		return "bearer " + utils.UUIDv4()
+		return "client:" + utils.UUIDv4() + "$" + strings.ToLower(utils2.NewRandom().String(25))
 	},
 	KeyLookup: "header:Authorization",
 	Storage:   rdb.Redis,
@@ -22,9 +22,10 @@ var store = session.New(session.Config{
 
 func Session(c *fiber.Ctx) (*session.Session, error) {
 	authHeader := strings.ToLower(string(c.Request().Header.Peek("Authorization")))
-	if !strings.HasPrefix(authHeader, "bearer ") || !utils2.IsValidUUID(strings.TrimPrefix(authHeader, "bearer ")) {
+	authHeaderTrimmed := strings.TrimPrefix(authHeader, "bearer ")
+	if !strings.HasPrefix(authHeader, "bearer ") {
 		c.Request().Header.Del("Authorization")
 	}
-	c.Request().Header.Set("Authorization", authHeader)
+	c.Request().Header.Set("Authorization", authHeaderTrimmed)
 	return store.Get(c)
 }
