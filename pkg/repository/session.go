@@ -20,3 +20,9 @@ func (session) FindForUser(uID uint, id uint) *models.Session {
 	database.DB.Model(&models.Session{}).Where("user_id = ? and id = ?", uID, id).First(&s)
 	return s
 }
+
+func (session) FindForUserByIP(uID uint, ip string) []*models.Session {
+	var s []*models.Session
+	database.DB.Model(&models.Session{}).Where("user_id = ? and ip = ?", uID, ip).Find(&s)
+	return s
+}

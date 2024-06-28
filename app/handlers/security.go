@@ -4,7 +4,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/wizzldev/chat/database"
 	"github.com/wizzldev/chat/database/models"
-	"github.com/wizzldev/chat/database/rdb"
 	"github.com/wizzldev/chat/pkg/middlewares"
 	"github.com/wizzldev/chat/pkg/repository"
 )
@@ -38,7 +37,7 @@ func (security) DestroySessions(c *fiber.Ctx) error {
 
 	var del []models.Session
 	for _, session := range sessions {
-		err := rdb.Redis.Delete(session.SessionID)
+		err := middlewares.Store.Delete(session.SessionID)
 		if err == nil {
 			del = append(del, *session)
 		}
@@ -60,7 +59,7 @@ func (security) DestroySession(c *fiber.Ctx) error {
 	userID := authUserID(c)
 	sess := repository.Session.FindForUser(userID, uint(id))
 
-	err = rdb.Redis.Delete(sess.SessionID)
+	err = middlewares.Store.Delete(sess.SessionID)
 	if err != nil {
 		return err
 	}
@@ -76,5 +75,22 @@ func (security) IPs(c *fiber.Ctx) error {
 }
 
 func (security) DestroyIP(c *fiber.Ctx) error {
-	return nil
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
+	userID := authUserID(c)
+	ip := repository.IPs.FindForUser(userID, uint(id))
+	sessions := repository.Session.FindForUserByIP(userID, ip.IP)
+	database.DB.Delete(ip)
+
+	for _, session := range sessions {
+		_ = middlewares.Store.Delete(session.SessionID)
+	}
+	database.DB.Delete(sessions)
+
+	return c.JSON(fiber.Map{
+		"status": "ok",
+	})
 }

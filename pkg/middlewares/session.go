@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-var store = session.New(session.Config{
+var Store = session.New(session.Config{
 	Expiration: time.Duration(configs.Env.Session.LifespanSeconds) * time.Second,
 	KeyGenerator: func() string {
 		return "client:" + utils.UUIDv4() + "$" + strings.ToLower(utils2.NewRandom().String(25))
@@ -27,5 +27,5 @@ func Session(c *fiber.Ctx) (*session.Session, error) {
 		c.Request().Header.Del("Authorization")
 	}
 	c.Request().Header.Set("Authorization", authHeaderTrimmed)
-	return store.Get(c)
+	return Store.Get(c)
 }
