@@ -6,6 +6,8 @@ import (
 	"github.com/wizzldev/chat/app/requests"
 	"github.com/wizzldev/chat/app/services"
 	"github.com/wizzldev/chat/database"
+	"github.com/wizzldev/chat/database/models"
+	"io"
 	"strings"
 )
 
@@ -56,4 +58,20 @@ func (m *me) UploadProfileImage(c *fiber.Ctx) error {
 	database.DB.Save(user)
 
 	return c.JSON(user)
+}
+
+func (m *me) getAvatarSmall(f *models.File) ([]byte, error) {
+	file, err := m.Storage.OpenFile(f.Path)
+
+	if err != nil {
+		return nil, err
+	}
+
+	r, err := m.Storage.WebPStream(file, 15)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return io.ReadAll(r)
 }

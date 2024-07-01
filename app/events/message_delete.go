@@ -2,7 +2,6 @@ package events
 
 import (
 	"errors"
-	"fmt"
 	"github.com/wizzldev/chat/database"
 	"github.com/wizzldev/chat/database/models"
 	"github.com/wizzldev/chat/pkg/logger"
@@ -24,10 +23,9 @@ func DispatchMessageDelete(wsID string, userIDs []uint, gID uint, user *models.U
 	m.Type = "deleted"
 	m.Content = ""
 	m.DataJSON = "{}"
-	fmt.Println("xxxxxxxxxxxxxxxxx", m.ReplyID, "data xxxxxxxx", m.Reply)
 	database.DB.Save(m)
 
-	sentTo := ws.WebSocket[wsID].BroadcastToUsers(userIDs, ws.Message{
+	sentTo := ws.WebSocket.BroadcastToUsers(userIDs, wsID, ws.Message{
 		Event:  "message.unSend",
 		Data:   m.ID,
 		HookID: msg.HookID,
@@ -35,6 +33,5 @@ func DispatchMessageDelete(wsID string, userIDs []uint, gID uint, user *models.U
 
 	logger.WSSend(wsID, "message.unSend", user.ID, sentTo)
 
-	DispatchShouldFetch(sentTo, userIDs, gID)
 	return nil
 }

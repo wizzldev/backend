@@ -9,5 +9,5 @@ const (
 	LocalAuthUserID = "authUserId"
 	LocalFileModel  = "storage.file"
 
-	DefaultWSPool = "ws.default.pool"
+	DefaultWSResource = "ws.default"
 )

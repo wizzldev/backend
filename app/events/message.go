@@ -51,7 +51,7 @@ func DispatchMessage(wsID string, userIDs []uint, gID uint, user *models.User, m
 	database.DB.Create(message)
 	message = repository.Message.FindOne(message.ID)
 
-	sentTo := ws.WebSocket[wsID].BroadcastToUsers(userIDs, ws.Message{
+	sentTo := ws.WebSocket.BroadcastToUsers(userIDs, wsID, ws.Message{
 		Event: "message",
 		Data: ChatMessage{
 			MessageID: message.ID,
@@ -67,7 +67,5 @@ func DispatchMessage(wsID string, userIDs []uint, gID uint, user *models.User, m
 	})
 
 	logger.WSSend(wsID, "message", user.ID, sentTo)
-
-	DispatchShouldFetch(sentTo, userIDs, gID)
 	return nil
 }

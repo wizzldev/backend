@@ -14,6 +14,11 @@ type Message struct {
 	HookID string      `json:"hook_id"`
 }
 
+type MessageWrapper struct {
+	Message  *Message `json:"message"`
+	Resource string   `json:"resource"`
+}
+
 type ClientMessage struct {
 	Content  string `json:"content" validate:"required,min=1,max=300"`
 	Type     string `json:"type" validate:"required,max=55"`
@@ -21,17 +26,25 @@ type ClientMessage struct {
 	HookID   string `json:"hook_id"`
 }
 
-func NewClientMessage(data []byte, conn *Connection) (*ClientMessage, error) {
-	var c ClientMessage
+type ClientMessageWrapper struct {
+	Message  *ClientMessage `json:"message"`
+	Resource string         `json:"resource"`
+}
+
+func NewMessage(data []byte, conn *Connection) (*ClientMessageWrapper, error) {
+	var c ClientMessageWrapper
 	err := json.Unmarshal(data, &c)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode body: %w", err)
 	}
 
-	if err := utils.Validator.Struct(&c); err != nil {
-		go conn.Send(Message{
-			Event: "error",
-			Data:  err.Error(),
+	if err := utils.Validator.Struct(c.Message); err != nil {
+		go conn.Send(MessageWrapper{
+			Message: &Message{
+				Event: "error",
+				Data:  err.Error(),
+			},
+			Resource: utils.DefaultWSResource,
 		})
 		return nil, err
 	}

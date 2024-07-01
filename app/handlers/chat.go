@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/wizzldev/chat/app/events"
 	"github.com/wizzldev/chat/app/requests"
@@ -149,18 +148,6 @@ func (*chat) Messages(c *fiber.Ctx) error {
 	return c.JSON(pagination)
 }
 
-func (ch *chat) Connect(c *fiber.Ctx) error {
-	serverID := c.Params("id")
-	serverIDint, _ := strconv.Atoi(serverID)
-
-	if !repository.Group.CanUserAccess(uint(serverIDint), authUser(c)) {
-		return fmt.Errorf("you are not allowed to access this chat")
-	}
-
-	ch.openServer(serverID)
-	return websocket.New(ws.WebSocket[serverID].AddConnection)(c)
-}
-
 func (ch *chat) UploadFile(c *fiber.Ctx) error {
 	serverID := c.Params("id")
 	gID, err := strconv.Atoi(serverID)
@@ -180,7 +167,6 @@ func (ch *chat) UploadFile(c *fiber.Ctx) error {
 	}
 
 	user := authUser(c)
-	ch.openServer(serverID)
 
 	err = events.DispatchMessage(serverID, ch.Cache.GetGroupMemberIDs(serverID), uint(gID), user, &ws.ClientMessage{
 		Content:  "none",
@@ -195,13 +181,4 @@ func (ch *chat) UploadFile(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"status": "success",
 	})
-}
-
-func (*chat) openServer(serverID string) {
-	server, ok := ws.WebSocket[serverID]
-
-	if !ok {
-		server = ws.NewServer(serverID)
-		ws.WebSocket[serverID] = server
-	}
 }

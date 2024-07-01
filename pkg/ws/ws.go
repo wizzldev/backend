@@ -9,49 +9,47 @@ import (
 	"sync"
 )
 
-var MessageHandler func(s *Server, conn *Connection, userID uint, message []byte) error
+var MessageHandler func(conn *Connection, userID uint, message []byte) error
 
-var WebSocket = map[string]*Server{}
+var WebSocket *Server
 
 type Server struct {
-	ID   string
 	Pool []*Connection
 	mu   sync.Mutex
 }
 
 type BroadcastFunc func(*Connection) bool
 
-func Default() *Server {
-	server, ok := WebSocket[utils.DefaultWSPool]
-
-	if !ok {
-		server = NewServer(utils.DefaultWSPool)
-		WebSocket[utils.DefaultWSPool] = server
+func Init() *Server {
+	if WebSocket == nil {
+		WebSocket = NewServer()
 	}
 
-	return server
+	return WebSocket
 }
 
-func NewServer(id string) *Server {
+func NewServer() *Server {
 	return &Server{
-		ID:   id,
 		Pool: []*Connection{},
 	}
 }
 
 func (s *Server) AddConnection(ws *websocket.Conn) {
-	conn := NewConnection(s.ID, ws, ws.Locals(utils.LocalAuthUserID).(uint))
+	conn := NewConnection("", ws, ws.Locals(utils.LocalAuthUserID).(uint))
 	defer conn.Disconnect()
 	conn.Init()
-	conn.Send(Message{
-		Event:  "connection",
-		Data:   "established",
-		HookID: "#",
+	conn.Send(MessageWrapper{
+		Message: &Message{
+			Event:  "connection",
+			Data:   "established",
+			HookID: "#",
+		},
+		Resource: utils.DefaultWSResource,
 	})
 	s.Pool = append(s.Pool, conn)
 
 	if configs.Env.Debug {
-		logger.WSNewConnection(s.ID, conn.IP(), conn.UserID)
+		logger.WSNewConnection("", conn.IP(), conn.UserID)
 	}
 
 	s.LogPoolSize()
@@ -59,7 +57,7 @@ func (s *Server) AddConnection(ws *websocket.Conn) {
 	conn.ReadLoop()
 }
 
-func (s *Server) Broadcast(m Message) {
+func (s *Server) Broadcast(m MessageWrapper) {
 	for _, conn := range s.Pool {
 		if conn.Connected {
 			conn.Send(m)
@@ -67,7 +65,7 @@ func (s *Server) Broadcast(m Message) {
 	}
 }
 
-func (s *Server) BroadcastFunc(f BroadcastFunc, m Message) {
+func (s *Server) BroadcastFunc(f BroadcastFunc, m MessageWrapper) {
 	for _, conn := range s.Pool {
 		if conn.Connected && f(conn) {
 			conn.Send(m)
@@ -75,11 +73,14 @@ func (s *Server) BroadcastFunc(f BroadcastFunc, m Message) {
 	}
 }
 
-func (s *Server) BroadcastToUsers(userIDs []uint, m Message) []uint {
+func (s *Server) BroadcastToUsers(userIDs []uint, id string, m Message) []uint {
 	var sentTo []uint
 	for _, conn := range s.Pool {
 		if slices.Contains(userIDs, conn.UserID) && conn.Connected {
-			conn.Send(m)
+			conn.Send(MessageWrapper{
+				Message:  &m,
+				Resource: id,
+			})
 			sentTo = append(sentTo, conn.UserID)
 		}
 	}
@@ -101,5 +102,5 @@ func (s *Server) GetUserIDs() []uint {
 }
 
 func (s *Server) LogPoolSize() {
-	logger.WSPoolSize(s.ID, len(s.Pool), s.GetUserIDs())
+	logger.WSPoolSize("", len(s.Pool), s.GetUserIDs())
 }
