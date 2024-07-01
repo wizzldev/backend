@@ -20,11 +20,12 @@ func main() {
 	database.MustConnect()
 
 	app := fiber.New(fiber.Config{
-		ErrorHandler: routes.ErrorHandler,
-		Prefork:      !configs.Env.Debug,
-		ServerHeader: "Wizzl",
-		AppName:      "Wizzl v1.0.0",
-		ProxyHeader:  fiber.HeaderXForwardedFor,
+		ErrorHandler:       routes.ErrorHandler,
+		Prefork:            !configs.Env.Debug,
+		ServerHeader:       "Wizzl",
+		AppName:            "Wizzl v1.0.0",
+		ProxyHeader:        fiber.HeaderXForwardedFor,
+		EnableIPValidation: true,
 	})
 
 	if !configs.Env.Debug {
