@@ -255,3 +255,7 @@ func (s *Storage) RemoveByDisc(disc string) error {
 
 	return nil
 }
+
+func (s *Storage) OpenFile(path string) (*os.File, error) {
+	return os.Open(filepath.Join(s.BasePath, path))
+}

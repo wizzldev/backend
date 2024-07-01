@@ -16,7 +16,7 @@ type MessageLike struct {
 	MessageID uint         `json:"message_id"`
 }
 
-func DispatchMessageLike(wsID string, userIDs []uint, gID uint, user *models.User, msg *ws.ClientMessage) error {
+func DispatchMessageLike(wsID string, userIDs []uint, _ uint, user *models.User, msg *ws.ClientMessage) error {
 	msgID := struct {
 		MessageID uint `json:"message_id"`
 	}{}
@@ -51,7 +51,7 @@ func DispatchMessageLike(wsID string, userIDs []uint, gID uint, user *models.Use
 			t += ".remove"
 		}
 
-		sentTo := ws.WebSocket[wsID].BroadcastToUsers(userIDs, ws.Message{
+		_ = ws.WebSocket.BroadcastToUsers(userIDs, wsID, ws.Message{
 			Event: "message." + t,
 			Data: &MessageLike{
 				ID:        messageLike.ID,
@@ -61,8 +61,6 @@ func DispatchMessageLike(wsID string, userIDs []uint, gID uint, user *models.Use
 			},
 			HookID: msg.HookID,
 		})
-
-		DispatchShouldFetch(sentTo, userIDs, gID)
 	}
 
 	return nil

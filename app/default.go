@@ -10,35 +10,40 @@ import (
 	"time"
 )
 
-func WSActionHandler(s *ws.Server, conn *ws.Connection, userID uint, data []byte) error {
-	msg, err := ws.NewClientMessage(data, conn)
+func WSActionHandler(conn *ws.Connection, userID uint, data []byte) error {
+	wrapper, err := ws.NewMessage(data, conn)
 
 	if err != nil {
 		return err
 	}
 
+	msg := wrapper.Message
+
 	if configs.Env.Debug {
-		logger.WSNewEvent(s.ID, msg.Type, userID)
+		logger.WSNewEvent(wrapper.Resource, msg.Type, userID)
 	}
 
 	if msg.Type == "ping" {
-		conn.Send(ws.Message{
-			Event:  "pong",
-			Data:   "pong",
-			HookID: msg.HookID,
+		conn.Send(ws.MessageWrapper{
+			Message: &ws.Message{
+				Event:  "pong",
+				Data:   "pong",
+				HookID: msg.HookID,
+			},
+			Resource: utils.DefaultWSResource,
 		})
 		return nil
 	}
 
 	if msg.Type == "close" {
-		logger.WSDisconnect(s.ID, userID)
+		logger.WSDisconnect(wrapper.Resource, userID)
 		conn.Disconnect()
 		return nil
 	}
 
 	_ = rdb.Redis.Set(fmt.Sprintf("user.is-online.%v", userID), []byte("true"), time.Minute*10)
-	if s.ID != utils.DefaultWSPool {
-		return MessageActionHandler(s, conn, userID, msg)
+	if wrapper.Resource != utils.DefaultWSResource {
+		return MessageActionHandler(conn, userID, msg, wrapper.Resource)
 	}
 
 	return nil

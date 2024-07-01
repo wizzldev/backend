@@ -120,7 +120,6 @@ func (g *group) UploadGroupImage(c *fiber.Ctx) error {
 	group.ImageURL = file.Discriminator + ".webp"
 	database.DB.Save(group)
 
-	Chat.openServer(serverID)
 	err = events.DispatchMessage(serverID, g.Cache.GetGroupMemberIDs(serverID), uint(id), authUser(c), &ws.ClientMessage{
 		Type:     "update.image",
 		HookID:   c.Query("hook_id"),

@@ -21,6 +21,5 @@ func WS(r fiber.Router) {
 		return fiber.ErrUpgradeRequired
 	})
 	r.Get("/", handlers.WS.Connect)
-	r.Get("/chat/:id", handlers.Chat.Connect)
 	r.Use(HandleNotFoundError)
 }

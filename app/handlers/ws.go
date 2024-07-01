@@ -11,5 +11,5 @@ type wsHandler struct{}
 var WS wsHandler
 
 func (wsHandler) Connect(c *fiber.Ctx) error {
-	return websocket.New(ws.Default().AddConnection)(c)
+	return websocket.New(ws.Init().AddConnection)(c)
 }
