@@ -220,19 +220,32 @@ func (group) GetChatUser(chatID uint, userID uint) *models.Group {
 	return &data
 }
 
-func (group) GetUserRoles(gID uint, uID uint) role.Roles {
-	var dbRoles []models.MemberRole
-	database.DB.Model(&dbRoles).Where("user_id = ? and group_id = ?", uID, gID).Find(&dbRoles)
+func (group) GetUserRoles(gID uint, uID uint, roles role.Roles) role.Roles {
+	var gUser models.GroupUser
+	database.DB.Model(&models.GroupUser{}).Where("user_id = ? and group_id = ?", uID, gID).First(&gUser)
 
-	var roles role.Roles
-
-	for _, r := range dbRoles {
-		realRole, err := role.New(r.Role)
+	for _, r := range gUser.Roles {
+		realRole, err := role.New(r)
 		if err != nil {
 			continue
+		}
+		if realRole == role.Creator {
+			return *role.All()
+		}
+		if realRole == role.Admin {
+			roles = *role.All()
+			roles.Revoke(role.Creator)
+			break
 		}
 		roles = append(roles, realRole)
 	}
 
 	return roles
+}
+
+func (group) FindGroupUser(gID uint, uID uint) *models.GroupUser {
+	var gUser models.GroupUser
+	err := database.DB.Model(&models.GroupUser{}).Where("group_id = ? and user_id = ?", gID, uID).Find(&gUser)
+	fmt.Println(err)
+	return &gUser
 }

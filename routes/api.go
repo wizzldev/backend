@@ -5,6 +5,7 @@ import (
 	"github.com/wizzldev/chat/app/handlers"
 	"github.com/wizzldev/chat/app/requests"
 	"github.com/wizzldev/chat/pkg/middlewares"
+	"github.com/wizzldev/chat/pkg/utils/role"
 	"time"
 )
 
@@ -51,17 +52,19 @@ func RegisterAPI(r fiber.Router) {
 	chat := auth.Group("/chat")
 	{
 		chat.Get("/contacts", handlers.Chat.Contacts)
-		chat.Get("/user/:id<int>", handlers.Group.GetInfo)
-		chat.Get("/private/:id<int>", handlers.Chat.PrivateMessage)
+		chat.Get("/user/:id<int>", middlewares.GroupAccess("id"), handlers.Group.GetInfo)
+		chat.Get("/private/:id<int>", middlewares.GroupAccess("id"), handlers.Chat.PrivateMessage)
 		chat.Post("/search", requests.Use[requests.SearchContacts](), handlers.Chat.Search)
 	}
 
 	msg := chat.Group("/:id<int>", middlewares.GroupAccess("id"))
 	{
 		msg.Get("/", handlers.Chat.Find)
-		msg.Post("/group-image", handlers.Group.UploadGroupImage)
+		msg.Put("/", middlewares.NewRoleMiddleware(role.EditGroupName), requests.Use[requests.EditGroupName](), handlers.Group.EditName)
+		msg.Put("/roles", middlewares.NewRoleMiddleware(role.Admin), requests.Use[requests.ModifyRoles](), handlers.Group.ModifyRoles)
+		msg.Post("/group-image", middlewares.NewRoleMiddleware(role.EditGroupImage), handlers.Group.UploadGroupImage)
 		msg.Get("/paginate", handlers.Chat.Messages)
-		msg.Post("/file", handlers.Chat.UploadFile)
+		msg.Post("/file", middlewares.NewRoleMiddleware(role.AttachFile), handlers.Chat.UploadFile)
 		msg.Use(HandleNotFoundError)
 	}
 

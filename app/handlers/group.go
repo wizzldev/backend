@@ -11,6 +11,7 @@ import (
 	"github.com/wizzldev/chat/pkg/repository"
 	"github.com/wizzldev/chat/pkg/utils/role"
 	"github.com/wizzldev/chat/pkg/ws"
+	"slices"
 )
 
 type group struct {
@@ -51,16 +52,23 @@ func (*group) New(c *fiber.Ctx) error {
 	}
 
 	database.DB.Create(&g)
+
+	userID := authUserID(c)
+
 	message := models.Message{
 		HasGroup: models.HasGroup{
 			GroupID: g.ID,
 		},
 		Type: "chat.create",
 		HasMessageSender: models.HasMessageSender{
-			SenderID: authUserID(c),
+			SenderID: userID,
 		},
 	}
 	database.DB.Create(&message)
+
+	database.DB.Where("group_id = ? and user_id = ?", g.ID, userID).Save(&models.GroupUser{
+		Roles: []string{string(role.Creator)},
+	})
 
 	return c.JSON(fiber.Map{
 		"group_id": g.ID,
@@ -73,9 +81,18 @@ func (*group) GetInfo(c *fiber.Ctx) error {
 		return err
 	}
 
-	g := repository.Group.GetChatUser(uint(id), authUserID(c))
+	userID := authUserID(c)
+	g := repository.Group.GetChatUser(uint(id), userID)
 
-	return c.JSON(g)
+	return c.JSON(fiber.Map{
+		"id":         g.ID,
+		"created_at": g.CreatedAt,
+		"updated_at": g.UpdatedAt,
+		"image_url":  g.ImageURL,
+		"name":       g.Name,
+		"roles":      g.Roles,
+		"your_roles": repository.Group.GetUserRoles(g.ID, userID, *role.NewRoles(g.Roles)),
+	})
 }
 
 func (*group) GetAllRoles(c *fiber.Ctx) error {
@@ -86,6 +103,7 @@ func (*group) GetAllRoles(c *fiber.Ctx) error {
 			role.EditGroupName,
 			role.EditGroupTheme,
 			role.SendMessage,
+			role.AttachFile,
 			role.DeleteMessage,
 			role.CreateIntegration,
 			role.KickUser,
@@ -104,7 +122,7 @@ func (g *group) UploadGroupImage(c *fiber.Ctx) error {
 
 	group := repository.Group.Find(uint(id))
 	if group.ID < 1 || group.IsPrivateMessage {
-		return fiber.ErrNotFound
+		return fiber.ErrBadRequest
 	}
 
 	fileH, err := c.FormFile("image")
@@ -131,4 +149,74 @@ func (g *group) UploadGroupImage(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(group)
+}
+
+func (g *group) ModifyRoles(c *fiber.Ctx) error {
+	id, err := c.ParamsInt("id")
+	serverID := c.Params("id")
+	if err != nil {
+		return err
+	}
+
+	gr := repository.Group.Find(uint(id))
+	if gr.ID < 1 || gr.IsPrivateMessage {
+		return fiber.ErrBadRequest
+	}
+
+	roles := validation[requests.ModifyRoles](c)
+
+	userRoles := repository.Group.GetUserRoles(uint(id), authUserID(c), *role.NewRoles(gr.Roles))
+	if !userRoles.Can(role.Creator) {
+		if slices.Contains(gr.Roles, string(role.Creator)) != slices.Contains(roles.Roles, string(role.Creator)) {
+			return fiber.ErrForbidden
+		}
+	}
+
+	gr.Roles = roles.Roles
+
+	database.DB.Save(gr)
+
+	userIDs := g.Cache.GetGroupMemberIDs(serverID)
+
+	_ = events.DispatchMessage(serverID, userIDs, uint(id), authUser(c), &ws.ClientMessage{
+		Type:     "update.roles",
+		DataJSON: "{}",
+	})
+
+	events.SendToGroup(serverID, userIDs, ws.Message{
+		Event: "reload",
+		Data:  nil,
+	})
+
+	return c.JSON(fiber.Map{
+		"status": "ok",
+	})
+}
+
+func (g *group) EditName(c *fiber.Ctx) error {
+	id, err := c.ParamsInt("id")
+	serverID := c.Params("id")
+	if err != nil {
+		return err
+	}
+
+	gr := repository.Group.Find(uint(id))
+	if gr.ID < 1 || gr.IsPrivateMessage {
+		return fiber.ErrBadRequest
+	}
+
+	data := validation[requests.EditGroupName](c)
+	gr.Name = data.Name
+	database.DB.Save(gr)
+
+	userIDs := g.Cache.GetGroupMemberIDs(serverID)
+
+	_ = events.DispatchMessage(serverID, userIDs, uint(id), authUser(c), &ws.ClientMessage{
+		Type:     "update.name",
+		DataJSON: "{}",
+	})
+
+	return c.JSON(fiber.Map{
+		"status": "ok",
+	})
 }
