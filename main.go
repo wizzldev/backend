@@ -26,6 +26,7 @@ func main() {
 		AppName:            "Wizzl v1.0.0",
 		ProxyHeader:        fiber.HeaderXForwardedFor,
 		EnableIPValidation: true,
+		EnablePrintRoutes:  configs.Env.Debug,
 	})
 
 	if !configs.Env.Debug {

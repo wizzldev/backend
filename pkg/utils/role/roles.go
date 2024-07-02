@@ -1,6 +1,8 @@
 package role
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 type Roles []Role
 
@@ -16,17 +18,6 @@ func NewRoles(s []string) *Roles {
 	}
 
 	return &roles
-}
-
-func NewRolesFromJSONString(s string) (*Roles, error) {
-	var data []string
-	err := json.Unmarshal([]byte(s), &data)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return NewRoles(data), nil
 }
 
 func (r *Roles) Can(rl Role) bool {
@@ -51,5 +42,10 @@ func (r *Roles) Grant(rl Role) {
 }
 
 func (r *Roles) Revoke(rl Role) {
-
+	for i, revoke := range *r {
+		if revoke == rl {
+			*r = append((*r)[:i], (*r)[i+1:]...)
+			break
+		}
+	}
 }

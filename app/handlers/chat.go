@@ -13,7 +13,6 @@ import (
 	"github.com/wizzldev/chat/pkg/utils/role"
 	"github.com/wizzldev/chat/pkg/ws"
 	"net/url"
-	"slices"
 	"strconv"
 )
 
@@ -103,24 +102,17 @@ func (*chat) Find(c *fiber.Ctx) error {
 
 	user := authUser(c)
 
+	var isYourProfile = false
+
 	g := repository.Group.GetChatUser(uint(id), authUserID(c))
 	if g.ImageURL == "" && g.Name == "" {
 		g.ImageURL = user.ImageURL
 		g.Name = "You"
+		isYourProfile = true
 	}
 
 	var roles role.Roles
-	roles = append(roles, repository.Group.GetUserRoles(g.ID, authUserID(c))...)
-	for _, r := range g.Roles {
-		rl, err := role.New(r)
-		if err != nil {
-			continue
-		}
-
-		if !slices.Contains(roles, rl) {
-			roles = append(roles, rl)
-		}
-	}
+	roles = append(roles, repository.Group.GetUserRoles(g.ID, authUserID(c), *role.NewRoles(g.Roles))...)
 
 	pagination, err := repository.Message.CursorPaginate(uint(id), c.Query("cursor"))
 	if err != nil {
@@ -128,9 +120,10 @@ func (*chat) Find(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"group":      g,
-		"messages":   pagination,
-		"user_roles": roles,
+		"group":           g,
+		"messages":        pagination,
+		"user_roles":      roles,
+		"is_your_profile": isYourProfile,
 	})
 }
 
