@@ -6,7 +6,7 @@ require (
 	github.com/fatih/color v1.17.0
 	github.com/go-playground/validator/v10 v10.19.0
 	github.com/gofiber/contrib/websocket v1.3.0
-	github.com/gofiber/fiber/v2 v2.52.4
+	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/gofiber/storage/redis/v3 v3.1.1
 	github.com/golobby/dotenv v1.3.2
 	github.com/kolesa-team/go-webp v1.0.4
