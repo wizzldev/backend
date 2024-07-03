@@ -7,6 +7,7 @@ import (
 	"github.com/wizzldev/chat/pkg/logger"
 	"github.com/wizzldev/chat/pkg/repository"
 	"github.com/wizzldev/chat/pkg/ws"
+	"strings"
 	"time"
 )
 
@@ -39,7 +40,7 @@ func DispatchMessage(wsID string, userIDs []uint, gID uint, user *models.User, m
 		HasMessageSender: models.HasMessageSender{
 			SenderID: user.ID,
 		},
-		Content:  msg.Content,
+		Content:  strings.TrimSpace(msg.Content),
 		Type:     msg.Type,
 		DataJSON: msg.DataJSON,
 	}

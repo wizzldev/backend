@@ -20,7 +20,7 @@ func MustConnect() {
 	})
 
 	if err != nil {
-		log.Fatal(fmt.Sprintf("Failed to connect to the database: %v\n", err.Error()))
+		log.Fatalf("Failed to connect to the database: %v\n", err.Error())
 	}
 
 	log.Println("successfully connected to the database!")
@@ -39,6 +39,7 @@ func MustConnect() {
 		&models.EmailVerification{},
 		&models.ResetPassword{},
 		&models.Bot{},
+		&models.Theme{},
 		&models.GroupUser{},
 		&models.AllowedIP{},
 		&models.Session{},

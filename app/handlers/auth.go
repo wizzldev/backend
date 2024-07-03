@@ -26,7 +26,6 @@ func (a auth) Login(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	defer sess.Save()
 
 	loginRequest := validation[requests.Login](c)
 
@@ -52,6 +51,10 @@ func (a auth) Login(c *fiber.Ctx) error {
 
 	sess.Set(utils.SessionAuthUserID, user.ID)
 	sessID := sess.ID()
+	err = sess.Save()
+	if err != nil {
+		return err
+	}
 
 	database.DB.Create(&models.Session{
 		HasUser:   models.HasUserID(user.ID),

@@ -10,7 +10,7 @@ type Problem struct {
 	custom   map[string]any
 }
 
-func New(c fiber.Ctx, statusCode int, Type string, title string, detail string, instance string) error {
+func New(c *fiber.Ctx, statusCode int, Type string, title string, detail string, instance string) error {
 	return NewProblem(Type, title, detail, instance).Response(c, statusCode)
 }
 
@@ -30,7 +30,7 @@ func (p *Problem) AddCustomFields(fields map[string]any) {
 	}
 }
 
-func (p *Problem) Response(c fiber.Ctx, statusCode ...int) error {
+func (p *Problem) Response(c *fiber.Ctx, statusCode ...int) error {
 	status := fiber.StatusInternalServerError
 
 	if len(statusCode) > 0 {
