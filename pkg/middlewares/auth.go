@@ -11,7 +11,6 @@ func Auth(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	defer sess.Save()
 
 	userId := sess.Get(utils.SessionAuthUserID)
 	if userId == nil {

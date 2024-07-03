@@ -163,7 +163,7 @@ func (group) GetContactsForUser(userID uint, page int, authUser *models.User) *[
 				}
 			}
 			if groupName == "" {
-				groupName = fmt.Sprintf("You")
+				groupName = "You"
 			}
 		}
 
@@ -200,7 +200,7 @@ func (group) GetContactsForUser(userID uint, page int, authUser *models.User) *[
 
 func (group) GetChatUser(chatID uint, userID uint) *models.Group {
 	var data models.Group
-	_ = database.DB.Model(&models.Group{}).
+	_ = database.DB.Model(&models.Group{}).Preload("Theme").
 		Where("id = ?", chatID).Find(&data).Error
 
 	if data.IsPrivateMessage {

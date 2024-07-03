@@ -37,7 +37,6 @@ func NewServer() *Server {
 func (s *Server) AddConnection(ws *websocket.Conn) {
 	conn := NewConnection("", ws, ws.Locals(utils.LocalAuthUserID).(uint))
 	defer conn.Disconnect()
-	conn.Init()
 	conn.Send(MessageWrapper{
 		Message: &Message{
 			Event:  "connection",

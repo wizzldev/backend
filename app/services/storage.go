@@ -49,13 +49,10 @@ func (*Storage) WebPFromFormFile(file io.Reader, dest *os.File, contentType stri
 	switch contentType {
 	case "image/png":
 		img, err = png.Decode(file)
-		break
 	case "image/jpeg":
 		img, err = jpeg.Decode(file)
-		break
 	case "image/gif":
 		img, err = gif.Decode(file)
-		break
 	case "image/webp":
 		img, err = webp.Decode(file, &decoder.Options{})
 	default:
@@ -143,19 +140,20 @@ func (*Storage) NewDiscriminator() string {
 
 func (s *Storage) StoreAvatar(fileH *multipart.FileHeader) (*models.File, error) {
 	file, err := fileH.Open()
-	defer file.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer file.Close()
 
 	disc := s.NewDiscriminator()
 	cType := fileH.Header.Get("Content-Type")
 	path := s.getFileName(disc, "image/webp")
 	dest, err := os.Create(filepath.Join(s.BasePath, path))
-	defer dest.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer dest.Close()
+
 	fileInfo, err := dest.Stat()
 	if err != nil {
 		return nil, err
@@ -198,11 +196,11 @@ func (s *Storage) Store(fileH *multipart.FileHeader, token ...string) (*models.F
 	path := s.getFileName(disc, fileH.Header.Get("Content-Type"))
 
 	dest, err := os.Create(filepath.Join(s.BasePath, path))
-	defer dest.Close()
 	if err != nil {
 		fmt.Println("failed to open new file", err)
 		return nil, err
 	}
+	defer dest.Close()
 
 	data, err := io.ReadAll(file)
 	if err != nil {

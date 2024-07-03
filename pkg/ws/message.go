@@ -20,9 +20,9 @@ type MessageWrapper struct {
 }
 
 type ClientMessage struct {
-	Content  string `json:"content" validate:"required,min=1,max=300"`
+	Content  string `json:"content" validate:"required,min=1,max=500"`
 	Type     string `json:"type" validate:"required,max=55"`
-	DataJSON string `json:"data_json" validate:"required,json,max=55"`
+	DataJSON string `json:"data_json" validate:"required,json,max=200"`
 	HookID   string `json:"hook_id"`
 }
 

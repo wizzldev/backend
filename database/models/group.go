@@ -7,4 +7,5 @@ type Group struct {
 	ImageURL         string   `json:"image_url,omitempty" gorm:"default:null"`
 	Name             string   `json:"name,omitempty" gorm:"default:null"`
 	Roles            []string `json:"roles,omitempty" gorm:"default:'[]';serializer:json"`
+	HasTheme
 }

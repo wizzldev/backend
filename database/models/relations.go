@@ -19,8 +19,8 @@ func HasGroupID(id uint) HasGroup {
 }
 
 type HasUser struct {
-	UserID uint `json:"-"`
-	User   User `json:"sender" gorm:"constraint:OnDelete:CASCADE;foreignKey:UserID"`
+	UserID uint  `json:"-"`
+	User   *User `json:"user,omitempty" gorm:"constraint:OnDelete:CASCADE;foreignKey:UserID"`
 }
 
 func HasUserID(id uint) HasUser {
@@ -39,4 +39,9 @@ type HasMessage struct {
 
 type HasMessageLikes struct {
 	MessageLikes []MessageLike `json:"likes,omitempty" gorm:"constraint:OnDelete:CASCADE;foreignKey:MessageID"`
+}
+
+type HasTheme struct {
+	ThemeID *uint  `json:"-" gorm:"theme_id;default:NULL"`
+	Theme   *Theme `json:"theme,omitempty" gorm:"constraint:OnDelete:CASCADE;foreignKey:ThemeID"`
 }

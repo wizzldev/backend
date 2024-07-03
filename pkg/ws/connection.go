@@ -26,10 +26,6 @@ func NewConnection(serverID string, ws *websocket.Conn, userId uint) *Connection
 	}
 }
 
-func (c *Connection) Init() {
-	return
-}
-
 func (c *Connection) Disconnect(msg ...string) {
 	if !c.Connected {
 		return

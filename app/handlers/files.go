@@ -32,7 +32,7 @@ func (s *files) GetAvatar(c *fiber.Ctx) error {
 		return fiber.ErrBadRequest
 	}
 
-	size, err := c.ParamsInt("size")
+	size, _ := c.ParamsInt("size")
 	if size <= 0 {
 		size = 256
 	}
