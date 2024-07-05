@@ -48,8 +48,13 @@ type env struct {
 
 var Env env
 
-func LoadEnv() error {
-	file, err := os.Open("./.env")
+func LoadEnv(path ...string) error {
+	p := "./.env"
+	if len(path) > 0 {
+		p = path[0]
+	}
+
+	file, err := os.Open(p)
 	if err != nil {
 		return fmt.Errorf("failed to load environment variables: %w", err)
 	}

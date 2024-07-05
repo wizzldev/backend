@@ -2,9 +2,9 @@ package database
 
 import (
 	"fmt"
+	"github.com/wizzldev/chat/database/models"
 	"log"
 
-	"github.com/wizzldev/chat/database/models"
 	"github.com/wizzldev/chat/pkg/configs"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -12,6 +12,23 @@ import (
 )
 
 var DB *gorm.DB
+
+func getModels() []interface{} {
+	return []interface{}{
+		&models.Message{},
+		&models.MessageLike{},
+		&models.Group{},
+		&models.Block{},
+		&models.EmailVerification{},
+		&models.ResetPassword{},
+		&models.Theme{},
+		&models.GroupUser{},
+		&models.AllowedIP{},
+		&models.Session{},
+		&models.User{},
+		&models.File{},
+	}
+}
 
 func MustConnect() {
 	dsn := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?charset=utf8mb4&parseTime=True&loc=Local", configs.Env.Database.Username, configs.Env.Database.Password, configs.Env.Database.Host, configs.Env.Database.Port, configs.Env.Database.Database)
@@ -31,21 +48,7 @@ func MustConnect() {
 	}
 
 	log.Println("Running migrations")
-	err = db.AutoMigrate(
-		&models.Message{},
-		&models.MessageLike{},
-		&models.Group{},
-		&models.Block{},
-		&models.EmailVerification{},
-		&models.ResetPassword{},
-		&models.Bot{},
-		&models.Theme{},
-		&models.GroupUser{},
-		&models.AllowedIP{},
-		&models.Session{},
-		&models.User{},
-		&models.File{},
-	)
+	err = db.AutoMigrate(getModels()...)
 
 	if err != nil {
 		log.Fatal("Failed to migrate: " + err.Error())
