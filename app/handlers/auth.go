@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"net"
 	"strconv"
 	"time"
 
@@ -42,9 +43,9 @@ func (a auth) Login(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusUnauthorized, "Please verify your email before login")
 	}
 
-	if !repository.User.IsIPAllowed(user.ID, c.IP()) {
+	if !repository.User.IsIPAllowed(user.ID, c.IP()) && !net.ParseIP(c.IP()).IsPrivate() {
 		a.sendIPVerification(user, c.IP())
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"show_ip_modal": true,
 		})
 	}
@@ -106,7 +107,7 @@ func (a auth) Register(c *fiber.Ctx) error {
 		Active:  true,
 	})
 
-	return c.JSON(fiber.Map{
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"show_verification_modal": true,
 	})
 }
