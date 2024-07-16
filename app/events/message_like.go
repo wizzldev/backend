@@ -5,6 +5,7 @@ import (
 	"github.com/wizzldev/chat/database"
 	"github.com/wizzldev/chat/database/models"
 	"github.com/wizzldev/chat/pkg/repository"
+	"github.com/wizzldev/chat/pkg/utils"
 	"github.com/wizzldev/chat/pkg/ws"
 	"strings"
 )
@@ -49,6 +50,10 @@ func DispatchMessageLike(wsID string, userIDs []uint, _ uint, user *models.User,
 		var t = "like"
 		if !isLiked {
 			t += ".remove"
+		}
+
+		if user.IsBot {
+			userIDs = utils.RemoveFromSlice(userIDs, user.ID)
 		}
 
 		_ = ws.WebSocket.BroadcastToUsers(userIDs, wsID, ws.Message{

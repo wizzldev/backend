@@ -36,24 +36,24 @@ func (*chat) Contacts(c *fiber.Ctx) error {
 
 func (*chat) PrivateMessage(c *fiber.Ctx) error {
 	requestedUserID, err := c.ParamsInt("id", 0)
-	userID := uint(requestedUserID)
-
-	user := authUser(c)
 	if err != nil {
 		return err
 	}
+
+	userID := uint(requestedUserID)
+	user := authUser(c)
 
 	if repository.Block.IsBlocked(userID, user.ID) {
 		return fiber.NewError(fiber.StatusForbidden, "You are blocked")
 	}
 
-	if gID, ok := repository.Group.IsGroupExists([]uint{user.ID, userID}); ok {
+	if gID, ok := repository.Group.IsGroupExists([2]uint{user.ID, userID}); ok {
 		return c.JSON(fiber.Map{
 			"pm_id": gID,
 		})
 	}
 
-	group := models.Group{
+	g := models.Group{
 		Users: []*models.User{
 			{
 				Base: models.Base{
@@ -64,10 +64,11 @@ func (*chat) PrivateMessage(c *fiber.Ctx) error {
 		},
 		IsPrivateMessage: true,
 	}
-	database.DB.Create(&group)
+
+	database.DB.Create(&g)
 	database.DB.Create(&models.Message{
 		HasGroup: models.HasGroup{
-			GroupID: group.ID,
+			GroupID: g.ID,
 		},
 		HasMessageSender: models.HasMessageSender{
 			SenderID: user.ID,
@@ -77,7 +78,7 @@ func (*chat) PrivateMessage(c *fiber.Ctx) error {
 	})
 
 	return c.JSON(fiber.Map{
-		"pm_id": group.ID,
+		"pm_id": g.ID,
 	})
 }
 
@@ -107,11 +108,11 @@ func (*chat) Find(c *fiber.Ctx) error {
 	g := repository.Group.GetChatUser(uint(id), authUserID(c))
 	if g.ImageURL == "" && g.Name == "" {
 		g.ImageURL = user.ImageURL
-		g.Name = "You"
+		g.Name = "You#allowTranslation"
 		isYourProfile = true
 	}
 
-	var roles role.Roles
+	roles := role.Roles{}
 	roles = append(roles, repository.Group.GetUserRoles(g.ID, authUserID(c), *role.NewRoles(g.Roles))...)
 
 	pagination, err := repository.Message.CursorPaginate(uint(id), c.Query("cursor"))
@@ -139,6 +140,15 @@ func (*chat) Messages(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(pagination)
+}
+
+func (*chat) FindMessage(c *fiber.Ctx) error {
+	id, err := c.ParamsInt("messageID")
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(repository.Message.FindOne(uint(id)))
 }
 
 func (ch *chat) UploadFile(c *fiber.Ctx) error {

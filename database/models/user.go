@@ -12,13 +12,14 @@ import (
 
 type User struct {
 	Base
-	FirstName       string     `json:"first_name"`
-	LastName        string     `json:"last_name"`
-	Email           string     `json:"email"`
-	Password        string     `json:"-"`
-	ImageURL        string     `json:"image_url"`
+	FirstName       string     `json:"first_name" gorm:"type:varchar(100)"`
+	LastName        string     `json:"last_name" gorm:"type:varchar(100)"`
+	Email           string     `json:"email" gorm:"type:varchar(100)"`
+	Password        string     `json:"-" gorm:"type:varchar(255)"`
+	ImageURL        string     `json:"image_url" gorm:"type:varchar(255)"`
 	EmailVerifiedAt *time.Time `json:"-"`
 	IsOnline        bool       `json:"is_online" gorm:"-:all"`
+	IsBot           bool       `json:"is_bot" gorm:"default:false"`
 }
 
 var ctx = context.Background()

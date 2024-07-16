@@ -6,6 +6,7 @@ import (
 	"github.com/wizzldev/chat/database/models"
 	"github.com/wizzldev/chat/pkg/logger"
 	"github.com/wizzldev/chat/pkg/repository"
+	"github.com/wizzldev/chat/pkg/utils"
 	"github.com/wizzldev/chat/pkg/ws"
 	"strings"
 	"time"
@@ -51,6 +52,10 @@ func DispatchMessage(wsID string, userIDs []uint, gID uint, user *models.User, m
 
 	database.DB.Create(message)
 	message = repository.Message.FindOne(message.ID)
+
+	if user.IsBot {
+		userIDs = utils.RemoveFromSlice(userIDs, user.ID)
+	}
 
 	sentTo := ws.WebSocket.BroadcastToUsers(userIDs, wsID, ws.Message{
 		Event: "message",

@@ -20,12 +20,40 @@ var Store = session.New(session.Config{
 	Storage:   rdb.Redis,
 })
 
+func AuthSession(c *fiber.Ctx) (*session.Session, error) {
+	token, err := getToken(c.Request().Header.Peek("Authorization"))
+	if err != nil {
+		return nil, err
+	}
+	c.Request().Header.Set("Authorization", token)
+	return Store.Get(c)
+}
+
 func Session(c *fiber.Ctx) (*session.Session, error) {
-	authHeader := strings.ToLower(string(c.Request().Header.Peek("Authorization")))
+	return Store.Get(c)
+}
+
+func BotToken(c *fiber.Ctx) (string, error) {
+	token, err := getToken(c.Request().Header.Peek("Authorization"))
+	if err != nil {
+		return "", err
+	}
+	if !strings.HasPrefix(token, "bot ") {
+		return "", fiber.NewError(fiber.StatusBadRequest, "Authorization header does not contain bot token")
+	}
+	token = strings.TrimPrefix(token, "bot ")
+	c.Request().Header.Set("Authorization", token)
+	return token, nil
+}
+
+func getToken(raw []byte) (string, error) {
+	authHeader := strings.ToLower(string(raw))
+	if !strings.HasPrefix(authHeader, "bearer ") && authHeader != "" {
+		return "", fiber.NewError(fiber.StatusUnauthorized, "Invalid authorization header")
+	}
 	authHeaderTrimmed := strings.TrimPrefix(authHeader, "bearer ")
 	if !strings.HasPrefix(authHeader, "bearer ") {
-		c.Request().Header.Del("Authorization")
+		return "", fiber.NewError(fiber.StatusForbidden, "Authorization header is not bearer token")
 	}
-	c.Request().Header.Set("Authorization", authHeaderTrimmed)
-	return Store.Get(c)
+	return authHeaderTrimmed, nil
 }

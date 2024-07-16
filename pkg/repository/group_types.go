@@ -14,5 +14,6 @@ type Contact struct {
 	ID          uint        `json:"id"`
 	Name        string      `json:"name"`
 	ImageURL    string      `json:"image"`
+	Verified    bool        `json:"is_verified"`
 	LastMessage LastMessage `json:"last_message"`
 }
