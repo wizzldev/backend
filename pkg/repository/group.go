@@ -57,28 +57,23 @@ func (group) GetUserIDs(groupID uint) []uint {
 	return gIDs
 }
 
-func (group) IsGroupExists(userIDs []uint) (uint, bool) {
+func (group) IsGroupExists(userIDs [2]uint) (uint, bool) {
 	var data struct {
-		MemberCount int64
-		GroupID     uint
+		GroupID uint
 	}
 
-	err := database.DB.Raw(`
-	select count(distinct users.id) member_count, groups.id group_id from groups
-	inner join group_user on group_user.group_id = groups.id
-	inner join users on users.id = group_user.user_id
-	where users.id in (?)
-	order by groups.updated_at
-	limit 1
-	`, userIDs).
-		Scan(&data).Error
+	database.DB.Raw(`
+	select gu.group_id as group_id from group_user gu
+	inner join users on gu.user_id = users.id
+	inner join groups on groups.id = gu.group_id
+	group by gu.group_id
+	having sum(gu.user_id = ?) > 0
+	and sum(gu.user_id = ?) > 0
+	and count(*) = 2
+	`, userIDs[0], userIDs[1]).
+		Scan(&data)
 
-	if err != nil {
-		log.Warn("Failed to execute query:", err)
-		return 0, true
-	}
-
-	return data.GroupID, int(data.MemberCount) == len(userIDs)
+	return data.GroupID, data.GroupID != 0
 }
 
 func (group) GetContactsForUser(userID uint, page int, authUser *models.User) *[]Contact {
@@ -95,6 +90,7 @@ func (group) GetContactsForUser(userID uint, page int, authUser *models.User) *[
 		IsPrivateMessage bool
 		GroupName        *string
 		ImageURL         *string
+		Verified         bool
 	}
 	_ = database.DB.Raw(`
 	select 
@@ -106,7 +102,8 @@ func (group) GetContactsForUser(userID uint, page int, authUser *models.User) *[
        	groups.id as group_id,
        	groups.is_private_message,
        	groups.name as group_name,
-       	groups.image_url
+       	groups.image_url,
+		groups.verified
 	from messages
 	join (
     	select group_id, max(created_at) as max_created_at from messages
@@ -163,7 +160,7 @@ func (group) GetContactsForUser(userID uint, page int, authUser *models.User) *[
 				}
 			}
 			if groupName == "" {
-				groupName = "You"
+				groupName = "You#allowTranslation"
 			}
 		}
 
@@ -184,6 +181,7 @@ func (group) GetContactsForUser(userID uint, page int, authUser *models.User) *[
 			ID:       v.GroupID,
 			Name:     groupName,
 			ImageURL: imageURL,
+			Verified: v.Verified,
 			LastMessage: LastMessage{
 				SenderID:   v.SenderID,
 				SenderName: v.SenderName,

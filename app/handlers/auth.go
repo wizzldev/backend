@@ -35,6 +35,10 @@ func (a auth) Login(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusUnauthorized, "Invalid email or password")
 	}
 
+	if user.IsBot {
+		return fiber.NewError(fiber.StatusBadRequest, "Cannot use bot as user")
+	}
+
 	if !utils.NewPassword(loginRequest.Password).Compare(user.Password) {
 		return fiber.NewError(fiber.StatusUnauthorized, "Invalid email or password")
 	}

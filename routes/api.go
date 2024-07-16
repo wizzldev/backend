@@ -26,14 +26,14 @@ func RegisterAPI(r fiber.Router) {
 		r.Post("/request-new-email-verification", requests.Use[requests.Email](), handlers.Auth.RequestNewEmailVerification)
 	}
 
-	auth := r.Group("/", middlewares.Auth)
+	auth := r.Group("/", middlewares.AnyAuth)
 	{
 		auth.Get("/me", handlers.Me.Hello)
-		auth.Put("/me", middlewares.NewSimpleLimiter(3, 10*time.Minute, "Too many modifications, try again later"), requests.Use[requests.UpdateMe](), handlers.Me.Update)
-		auth.Post("/me/profile-image", handlers.Me.UploadProfileImage)
+		auth.Put("/me", middlewares.NoBots, requests.Use[requests.UpdateMe](), middlewares.NewSimpleLimiter(3, 10*time.Minute, "Too many modifications, try again later"), handlers.Me.Update)
+		auth.Post("/me/profile-image", middlewares.NoBots, handlers.Me.UploadProfileImage)
 	}
 
-	security := auth.Group("/security")
+	security := auth.Group("/security", middlewares.NoBots)
 	{
 		security.Get("/sessions", handlers.Security.Sessions)
 		security.Delete("/sessions", handlers.Security.DestroySessions)
@@ -43,7 +43,7 @@ func RegisterAPI(r fiber.Router) {
 		security.Use(HandleNotFoundError)
 	}
 
-	users := auth.Group("/users")
+	users := auth.Group("/users", middlewares.NoBots)
 	{
 		users.Post("/findByEmail", requests.Use[requests.Email](), handlers.Users.FindByEmail)
 		users.Use(HandleNotFoundError)
@@ -65,7 +65,18 @@ func RegisterAPI(r fiber.Router) {
 		msg.Post("/group-image", middlewares.NewRoleMiddleware(role.EditGroupImage), handlers.Group.UploadGroupImage)
 		msg.Get("/paginate", handlers.Chat.Messages)
 		msg.Post("/file", middlewares.NewRoleMiddleware(role.AttachFile), handlers.Chat.UploadFile)
+		msg.Get("/message/:messageID", handlers.Chat.FindMessage)
 		msg.Use(HandleNotFoundError)
+	}
+
+	// bot := r.Group("/bots", middlewares.Auth)
+	{
+		// bot.Get("/")
+		// bot.Post("/")
+		// bot.Post("/image")
+		// bot.Put("/")
+		// bot.Delete("/")
+		// bot.Use(HandleNotFoundError)
 	}
 
 	chat.Post("/group", requests.Use[requests.NewGroup](), handlers.Group.New)
