@@ -104,7 +104,7 @@ func (*Storage) WebPStream(file io.Reader, size uint) (io.Reader, error) {
 }
 
 func (s *Storage) LocalFile(c *fiber.Ctx) *models.File {
-	file := c.Locals(utils.LocalFileModel).(*models.File)
+	file := c.Locals(configs.LocalFileModel).(*models.File)
 	file.Path = filepath.Join(s.BasePath, file.Path)
 	return file
 }

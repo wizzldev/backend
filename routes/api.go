@@ -31,6 +31,7 @@ func RegisterAPI(r fiber.Router) {
 		auth.Get("/me", handlers.Me.Hello)
 		auth.Put("/me", middlewares.NoBots, requests.Use[requests.UpdateMe](), middlewares.NewSimpleLimiter(3, 10*time.Minute, "Too many modifications, try again later"), handlers.Me.Update)
 		auth.Post("/me/profile-image", middlewares.NoBots, handlers.Me.UploadProfileImage)
+		auth.Delete("/me", middlewares.NoBots, handlers.Me.Delete)
 	}
 
 	security := auth.Group("/security", middlewares.NoBots)
@@ -49,25 +50,33 @@ func RegisterAPI(r fiber.Router) {
 		users.Use(HandleNotFoundError)
 	}
 
-	chat := auth.Group("/chat")
+	auth.Get("/chat/contacts", handlers.Chat.Contacts)
+	auth.Get("/chat/user/:id<int>", middlewares.GroupAccess("id"), handlers.Group.GetInfo)
+	auth.Get("/chat/private/:id<int>", handlers.Chat.PrivateMessage)
+	auth.Post("/chat/search", requests.Use[requests.SearchContacts](), handlers.Chat.Search)
+
+	auth.Post("/chat/group", requests.Use[requests.NewGroup](), handlers.Group.New)
+	auth.Get("/chat/roles", handlers.Group.GetAllRoles)
+
+	chat := auth.Group("/chat/:id<int>", middlewares.GroupAccess("id"))
 	{
-		chat.Get("/contacts", handlers.Chat.Contacts)
-		chat.Get("/user/:id<int>", middlewares.GroupAccess("id"), handlers.Group.GetInfo)
-		chat.Get("/private/:id<int>", handlers.Chat.PrivateMessage)
-		chat.Post("/search", requests.Use[requests.SearchContacts](), handlers.Chat.Search)
+		chat.Get("/", handlers.Chat.Find)
+		chat.Put("/", middlewares.NewRoleMiddleware(role.EditGroupName), requests.Use[requests.EditGroupName](), handlers.Group.EditName)
+		chat.Get("/paginate", handlers.Chat.Messages)
+		chat.Delete("/", middlewares.NewRoleMiddleware(role.Creator), handlers.Group.Delete)
+
+		chat.Post("/file", middlewares.NewRoleMiddleware(role.AttachFile), handlers.Chat.UploadFile)
+		chat.Post("/group-image", middlewares.NewRoleMiddleware(role.EditGroupImage), handlers.Group.UploadGroupImage)
+
+		chat.Put("/roles", middlewares.NewRoleMiddleware(role.Admin), requests.Use[requests.ModifyRoles](), handlers.Group.ModifyRoles)
+
+		chat.Get("/message/:messageID", handlers.Chat.FindMessage)
+
+		chat.Post("/new-invite", middlewares.NewRoleMiddleware(role.InviteUser), requests.Use[requests.NewInvite](), handlers.Invite.Create)
+		chat.Use(HandleNotFoundError)
 	}
 
-	msg := chat.Group("/:id<int>", middlewares.GroupAccess("id"))
-	{
-		msg.Get("/", handlers.Chat.Find)
-		msg.Put("/", middlewares.NewRoleMiddleware(role.EditGroupName), requests.Use[requests.EditGroupName](), handlers.Group.EditName)
-		msg.Put("/roles", middlewares.NewRoleMiddleware(role.Admin), requests.Use[requests.ModifyRoles](), handlers.Group.ModifyRoles)
-		msg.Post("/group-image", middlewares.NewRoleMiddleware(role.EditGroupImage), handlers.Group.UploadGroupImage)
-		msg.Get("/paginate", handlers.Chat.Messages)
-		msg.Post("/file", middlewares.NewRoleMiddleware(role.AttachFile), handlers.Chat.UploadFile)
-		msg.Get("/message/:messageID", handlers.Chat.FindMessage)
-		msg.Use(HandleNotFoundError)
-	}
+	auth.Get("/invite/:code", handlers.Invite.Use)
 
 	// bot := r.Group("/bots", middlewares.Auth)
 	{
@@ -79,11 +88,6 @@ func RegisterAPI(r fiber.Router) {
 		// bot.Use(HandleNotFoundError)
 	}
 
-	chat.Post("/group", requests.Use[requests.NewGroup](), handlers.Group.New)
-	chat.Get("/roles", handlers.Group.GetAllRoles)
-	_ = chat.Group("/group/:groupId")
-
 	auth.Use(HandleNotFoundError)
-	chat.Use(HandleNotFoundError)
 	r.Use(HandleNotFoundError)
 }

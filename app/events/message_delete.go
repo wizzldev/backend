@@ -10,19 +10,20 @@ import (
 	"strconv"
 )
 
-func DispatchMessageDelete(wsID string, userIDs []uint, gID uint, user *models.User, msg *ws.ClientMessage) error {
+func DispatchMessageDelete(wsID string, userIDs []uint, user *models.User, msg *ws.ClientMessage, deleteOthers bool) error {
 	id, err := strconv.Atoi(msg.Content)
 	if err != nil {
 		return err
 	}
 
 	m := repository.Message.FindOne(uint(id))
-	if m.Sender.ID != user.ID {
+	if m.Sender.ID != user.ID && !deleteOthers {
 		return errors.New("cannot delete message")
 	}
 	m.Type = "deleted"
 	m.Content = ""
 	m.DataJSON = "{}"
+	m.ReplyID = nil
 	database.DB.Save(m)
 
 	sentTo := ws.WebSocket.BroadcastToUsers(userIDs, wsID, ws.Message{

@@ -6,6 +6,7 @@ import (
 	"github.com/wizzldev/chat/app/requests"
 	"github.com/wizzldev/chat/app/services"
 	"github.com/wizzldev/chat/database"
+	"github.com/wizzldev/chat/pkg/configs"
 	"strings"
 )
 
@@ -48,7 +49,7 @@ func (m *me) UploadProfileImage(c *fiber.Ctx) error {
 	}
 
 	user := authUser(c)
-	if user.ImageURL != "default.webp" {
+	if user.ImageURL != configs.DefaultUserImage {
 		_ = m.Storage.RemoveByDisc(strings.SplitN(user.ImageURL, ".", 2)[0])
 	}
 
@@ -58,18 +59,16 @@ func (m *me) UploadProfileImage(c *fiber.Ctx) error {
 	return c.JSON(user)
 }
 
-/*func (m *me) getAvatarSmall(f *models.File) ([]byte, error) {
-	file, err := m.Storage.OpenFile(f.Path)
+func (m *me) Delete(c *fiber.Ctx) error {
+	user := authUser(c)
 
-	if err != nil {
-		return nil, err
+	if user.ImageURL != configs.DefaultUserImage {
+		_ = m.Storage.RemoveByDisc(strings.SplitN(user.ImageURL, ".", 2)[0])
 	}
 
-	r, err := m.Storage.WebPStream(file, 15)
+	database.DB.Delete(user)
 
-	if err != nil {
-		return nil, err
-	}
-
-	return io.ReadAll(r)
-}*/
+	return c.JSON(fiber.Map{
+		"status": "ok",
+	})
+}

@@ -4,7 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/wizzldev/chat/app/requests"
-	"github.com/wizzldev/chat/pkg/utils"
+	"github.com/wizzldev/chat/pkg/configs"
 	"time"
 )
 
@@ -29,7 +29,7 @@ func NewSimpleLimiter(max int, expiration time.Duration, message string, keyGene
 
 func NewAuthLimiter() fiber.Handler {
 	return NewSimpleLimiter(10, 10*time.Minute, "Too many attempts, try again later", func(c *fiber.Ctx) string {
-		req := c.Locals(utils.RequestValidation).(*requests.Login)
+		req := c.Locals(configs.RequestValidation).(*requests.Login)
 		return req.Email
 	})
 }

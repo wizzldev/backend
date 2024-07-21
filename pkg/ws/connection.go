@@ -5,8 +5,8 @@ import (
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2/log"
 	"github.com/wizzldev/chat/pkg/configs"
-	"github.com/wizzldev/chat/pkg/utils"
 	"io"
+	"sync"
 	"time"
 )
 
@@ -15,6 +15,7 @@ type Connection struct {
 	Connected bool
 	UserID    uint
 	serverID  string
+	mu        *sync.RWMutex
 }
 
 func NewConnection(serverID string, ws *websocket.Conn, userId uint) *Connection {
@@ -23,6 +24,7 @@ func NewConnection(serverID string, ws *websocket.Conn, userId uint) *Connection
 		Connected: true,
 		UserID:    userId,
 		serverID:  serverID,
+		mu:        &sync.RWMutex{},
 	}
 }
 
@@ -69,7 +71,7 @@ func (c *Connection) ReadLoop() {
 					Data:   string(msg),
 					HookID: "#",
 				},
-				Resource: utils.DefaultWSResource,
+				Resource: configs.DefaultWSResource,
 			})
 		}
 
@@ -101,7 +103,9 @@ func (c *Connection) Send(m MessageWrapper) {
 	if !c.Connected {
 		return
 	}
+	c.mu.Lock()
 	err := c.Conn.WriteJSON(m)
+	c.mu.Unlock()
 	if err != nil {
 		c.Disconnect()
 	}

@@ -1,4 +1,4 @@
-package utils
+package configs
 
 const (
 	RequestValidation = "requestValidation"
@@ -11,4 +11,7 @@ const (
 	LocalFileModel  = "storage.file"
 
 	DefaultWSResource = "ws.default"
+
+	DefaultUserImage  = "default.webp"
+	DefaultGroupImage = "group.webp"
 )

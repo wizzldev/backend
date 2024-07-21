@@ -9,6 +9,7 @@ import (
 	"github.com/wizzldev/chat/pkg/utils/role"
 	"regexp"
 	"strings"
+	"time"
 )
 
 type IError struct {
@@ -69,5 +70,17 @@ func RegisterCustomValidations() {
 		value := level.Field().String()
 		_, err := role.New(strings.ToUpper(value))
 		return err == nil
+	})
+
+	_ = Validator.RegisterValidation("invite_date", func(fl validator.FieldLevel) bool {
+		date, ok := fl.Field().Interface().(time.Time)
+		if !ok {
+			return false
+		}
+		if date.IsZero() {
+			return true
+		}
+		now := time.Now()
+		return date.After(now.AddDate(0, 0, 1)) && date.Before(now.AddDate(0, 6, 0))
 	})
 }

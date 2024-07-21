@@ -44,7 +44,7 @@ func MustConnectTestDB() {
 		LastName:        "Roe",
 		Email:           "jane@example.com",
 		Password:        pass, // password
-		ImageURL:        "default.webp",
+		ImageURL:        configs.DefaultUserImage,
 		EmailVerifiedAt: &now,
 	})
 	db.Create(&models.User{
@@ -52,7 +52,7 @@ func MustConnectTestDB() {
 		LastName:        "Doe",
 		Email:           "sam@example.com",
 		Password:        pass, // password
-		ImageURL:        "default.webp",
+		ImageURL:        configs.DefaultUserImage,
 		EmailVerifiedAt: &now,
 	})
 

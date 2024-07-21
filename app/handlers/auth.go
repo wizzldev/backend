@@ -54,7 +54,7 @@ func (a auth) Login(c *fiber.Ctx) error {
 		})
 	}
 
-	sess.Set(utils.SessionAuthUserID, user.ID)
+	sess.Set(configs.SessionAuthUserID, user.ID)
 	sessID := sess.ID()
 	err = sess.Save()
 	if err != nil {
@@ -92,7 +92,7 @@ func (a auth) Register(c *fiber.Ctx) error {
 		LastName:  registerRequest.LastName,
 		Email:     registerRequest.Email,
 		Password:  password,
-		ImageURL:  "default.webp",
+		ImageURL:  configs.DefaultUserImage,
 	}
 
 	err = database.DB.Create(&user).Error

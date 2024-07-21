@@ -1,9 +1,11 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 	"github.com/wizzldev/chat/app/events"
 	"github.com/wizzldev/chat/app/services"
+	"github.com/wizzldev/chat/pkg/utils/role"
 	"github.com/wizzldev/chat/pkg/ws"
 	"slices"
 	"strconv"
@@ -25,23 +27,33 @@ func MessageActionHandler(conn *ws.Connection, userID uint, msg *ws.ClientMessag
 		return err
 	}
 
-	gID, err := strconv.Atoi(id)
+	gIDInt, err := strconv.Atoi(id)
 	if err != nil {
 		return err
 	}
+	gID := uint(gIDInt)
 
 	members := cache.GetGroupMemberIDs(id)
 	if !slices.Contains(members, userID) {
 		return fmt.Errorf("user %d not in group members", userID)
 	}
 
+	roles := cache.GetRoles(userID, gID)
+	roleErr := errors.New("you do not have a permit")
+
 	switch msg.Type {
 	case "message":
-		return events.DispatchMessage(id, members, uint(gID), user, msg)
+		if !roles.Can(role.SendMessage) {
+			return roleErr
+		}
+		return events.DispatchMessage(id, members, gID, user, msg)
 	case "message.like":
-		return events.DispatchMessageLike(id, members, uint(gID), user, msg)
+		return events.DispatchMessageLike(id, members, gID, user, msg)
 	case "message.delete":
-		return events.DispatchMessageDelete(id, members, uint(gID), user, msg)
+		if !roles.Can(role.DeleteMessage) {
+			return roleErr
+		}
+		return events.DispatchMessageDelete(id, members, user, msg, roles.Can(role.DeleteOtherMemberMessage) && !cache.IsPM(gID))
 	default:
 		conn.Send(ws.MessageWrapper{
 			Message: &ws.Message{
