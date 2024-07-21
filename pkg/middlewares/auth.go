@@ -2,8 +2,8 @@ package middlewares
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/wizzldev/chat/pkg/configs"
 	"github.com/wizzldev/chat/pkg/repository"
-	"github.com/wizzldev/chat/pkg/utils"
 	"strings"
 )
 
@@ -13,7 +13,7 @@ func Auth(c *fiber.Ctx) error {
 		return err
 	}
 
-	userId := sess.Get(utils.SessionAuthUserID)
+	userId := sess.Get(configs.SessionAuthUserID)
 	if userId == nil {
 		return fiber.NewError(fiber.StatusUnauthorized, "Unauthorized")
 	}
@@ -28,9 +28,9 @@ func Auth(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Cannot use bot as a user")
 	}
 
-	c.Locals(utils.LocalAuthUser, user)
-	c.Locals(utils.LocalAuthUserID, user.ID)
-	c.Locals(utils.LocalIsBot, user.IsBot)
+	c.Locals(configs.LocalAuthUser, user)
+	c.Locals(configs.LocalAuthUserID, user.ID)
+	c.Locals(configs.LocalIsBot, user.IsBot)
 	return c.Next()
 }
 
@@ -59,9 +59,9 @@ func BotAuth(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusUnauthorized, "Unauthorized")
 	}
 
-	c.Locals(utils.LocalAuthUser, bot)
-	c.Locals(utils.LocalAuthUserID, bot.ID)
-	c.Locals(utils.LocalIsBot, bot.IsBot)
+	c.Locals(configs.LocalAuthUser, bot)
+	c.Locals(configs.LocalAuthUserID, bot.ID)
+	c.Locals(configs.LocalIsBot, bot.IsBot)
 	return c.Next()
 }
 
@@ -73,7 +73,7 @@ func AnyAuth(c *fiber.Ctx) error {
 }
 
 func NoBots(c *fiber.Ctx) error {
-	if c.Locals(utils.LocalIsBot).(bool) {
+	if c.Locals(configs.LocalIsBot).(bool) {
 		return fiber.NewError(fiber.StatusForbidden, "Bots not allowed")
 	}
 	return c.Next()

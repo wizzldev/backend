@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"github.com/gofiber/fiber/v2/log"
 	"github.com/wizzldev/chat/database"
 	"strings"
 )
@@ -41,16 +40,10 @@ func IsExists[M any](fields []string, values []any) bool {
 	var model M
 	var count int64
 
-	err := database.DB.Model(model).
+	database.DB.Model(model).
 		Where(buildWhereQuery(fields), values...).
 		Limit(1).
-		Count(&count).
-		Error
-
-	if err != nil {
-		log.Warn(err)
-		return false
-	}
+		Count(&count)
 
 	return count > 0
 }

@@ -8,10 +8,12 @@ import (
 	"github.com/wizzldev/chat/app/services"
 	"github.com/wizzldev/chat/database"
 	"github.com/wizzldev/chat/database/models"
+	"github.com/wizzldev/chat/pkg/configs"
 	"github.com/wizzldev/chat/pkg/repository"
 	"github.com/wizzldev/chat/pkg/utils/role"
 	"github.com/wizzldev/chat/pkg/ws"
 	"slices"
+	"strings"
 )
 
 type group struct {
@@ -44,7 +46,7 @@ func (*group) New(c *fiber.Ctx) error {
 	}
 
 	g := models.Group{
-		ImageURL:         "group.webp",
+		ImageURL:         configs.DefaultGroupImage,
 		Name:             data.Name,
 		Roles:            roles,
 		IsPrivateMessage: false,
@@ -67,7 +69,9 @@ func (*group) New(c *fiber.Ctx) error {
 	database.DB.Create(&message)
 
 	database.DB.Where("group_id = ? and user_id = ?", g.ID, userID).Save(&models.GroupUser{
-		Roles: []string{string(role.Creator)},
+		HasGroup: models.HasGroupID(g.ID),
+		HasUser:  models.HasUserID(userID),
+		Roles:    []string{string(role.Creator)},
 	})
 
 	return c.JSON(fiber.Map{
@@ -120,8 +124,8 @@ func (g *group) UploadGroupImage(c *fiber.Ctx) error {
 		return err
 	}
 
-	group := repository.Group.Find(uint(id))
-	if group.ID < 1 || group.IsPrivateMessage {
+	gr := repository.Group.Find(uint(id))
+	if gr.ID < 1 || gr.IsPrivateMessage {
 		return fiber.ErrBadRequest
 	}
 
@@ -135,8 +139,12 @@ func (g *group) UploadGroupImage(c *fiber.Ctx) error {
 		return err
 	}
 
-	group.ImageURL = file.Discriminator + ".webp"
-	database.DB.Save(group)
+	gr.ImageURL = file.Discriminator + ".webp"
+	database.DB.Save(gr)
+
+	if gr.ImageURL != configs.DefaultGroupImage {
+		_ = g.Storage.RemoveByDisc(strings.SplitN(gr.ImageURL, ".", 2)[0])
+	}
 
 	err = events.DispatchMessage(serverID, g.Cache.GetGroupMemberIDs(serverID), uint(id), authUser(c), &ws.ClientMessage{
 		Type:     "update.image",
@@ -148,7 +156,7 @@ func (g *group) UploadGroupImage(c *fiber.Ctx) error {
 		return err
 	}
 
-	return c.JSON(group)
+	return c.JSON(gr)
 }
 
 func (g *group) ModifyRoles(c *fiber.Ctx) error {
@@ -219,4 +227,9 @@ func (g *group) EditName(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"status": "ok",
 	})
+}
+
+func (*group) Delete(*fiber.Ctx) error {
+	// TODO
+	return nil
 }

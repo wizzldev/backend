@@ -3,12 +3,12 @@ package middlewares
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/wizzldev/chat/database"
-	"github.com/wizzldev/chat/pkg/utils"
+	"github.com/wizzldev/chat/pkg/configs"
 )
 
 func GroupAccess(IDLookup string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		authUserID := c.Locals(utils.LocalAuthUserID).(uint)
+		authUserID := c.Locals(configs.LocalAuthUserID).(uint)
 		groupID, err := c.ParamsInt(IDLookup)
 		if err != nil {
 			return err

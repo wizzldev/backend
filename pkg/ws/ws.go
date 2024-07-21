@@ -35,7 +35,7 @@ func NewServer() *Server {
 }
 
 func (s *Server) AddConnection(ws *websocket.Conn) {
-	conn := NewConnection("", ws, ws.Locals(utils.LocalAuthUserID).(uint))
+	conn := NewConnection("", ws, ws.Locals(configs.LocalAuthUserID).(uint))
 	defer conn.Disconnect()
 	conn.Send(MessageWrapper{
 		Message: &Message{
@@ -43,7 +43,7 @@ func (s *Server) AddConnection(ws *websocket.Conn) {
 			Data:   "established",
 			HookID: "#",
 		},
-		Resource: utils.DefaultWSResource,
+		Resource: configs.DefaultWSResource,
 	})
 	s.Pool = append(s.Pool, conn)
 

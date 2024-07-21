@@ -247,3 +247,9 @@ func (group) FindGroupUser(gID uint, uID uint) *models.GroupUser {
 	fmt.Println(err)
 	return &gUser
 }
+
+func (group) IsBanned(groupID, userID uint) bool {
+	var ban models.Ban
+	database.DB.Model(&models.Ban{}).Where("user_id = ? and group_id = ?", userID, groupID).First(&ban)
+	return ban.Exists()
+}

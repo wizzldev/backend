@@ -18,6 +18,8 @@ func getModels() []interface{} {
 		&models.Message{},
 		&models.MessageLike{},
 		&models.Group{},
+		&models.Ban{},
+		&models.Invite{},
 		&models.Block{},
 		&models.EmailVerification{},
 		&models.ResetPassword{},
@@ -33,7 +35,7 @@ func getModels() []interface{} {
 func MustConnect() {
 	dsn := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?charset=utf8mb4&parseTime=True&loc=Local", configs.Env.Database.Username, configs.Env.Database.Password, configs.Env.Database.Host, configs.Env.Database.Port, configs.Env.Database.Database)
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-		// DisableForeignKeyConstraintWhenMigrating: true,
+		DisableForeignKeyConstraintWhenMigrating: true,
 	})
 
 	if err != nil {

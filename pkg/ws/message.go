@@ -3,6 +3,7 @@ package ws
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/wizzldev/chat/pkg/configs"
 	"github.com/wizzldev/chat/pkg/utils"
 )
 
@@ -44,7 +45,7 @@ func NewMessage(data []byte, conn *Connection) (*ClientMessageWrapper, error) {
 				Event: "error",
 				Data:  err.Error(),
 			},
-			Resource: utils.DefaultWSResource,
+			Resource: configs.DefaultWSResource,
 		})
 		return nil, err
 	}

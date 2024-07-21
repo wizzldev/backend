@@ -5,7 +5,6 @@ import (
 	"github.com/wizzldev/chat/database/rdb"
 	"github.com/wizzldev/chat/pkg/configs"
 	"github.com/wizzldev/chat/pkg/logger"
-	"github.com/wizzldev/chat/pkg/utils"
 	"github.com/wizzldev/chat/pkg/ws"
 	"time"
 )
@@ -30,7 +29,7 @@ func WSActionHandler(conn *ws.Connection, userID uint, data []byte) error {
 				Data:   "pong",
 				HookID: msg.HookID,
 			},
-			Resource: utils.DefaultWSResource,
+			Resource: configs.DefaultWSResource,
 		})
 		return nil
 	}
@@ -42,7 +41,7 @@ func WSActionHandler(conn *ws.Connection, userID uint, data []byte) error {
 	}
 
 	_ = rdb.Redis.Set(fmt.Sprintf("user.is-online.%v", userID), []byte("true"), time.Minute*10)
-	if wrapper.Resource != utils.DefaultWSResource {
+	if wrapper.Resource != configs.DefaultWSResource {
 		return MessageActionHandler(conn, userID, msg, wrapper.Resource)
 	}
 

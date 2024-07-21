@@ -4,7 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/wizzldev/chat/database"
 	"github.com/wizzldev/chat/database/models"
-	"github.com/wizzldev/chat/pkg/utils"
+	"github.com/wizzldev/chat/pkg/configs"
 	"net/url"
 	"strings"
 )
@@ -38,14 +38,14 @@ func StorageFileToLocal() fiber.Handler {
 			return fiber.ErrNotFound
 		}
 
-		c.Locals(utils.LocalFileModel, &file)
+		c.Locals(configs.LocalFileModel, &file)
 		return c.Next()
 	}
 }
 
 func StorageFilePermission() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		file := c.Locals(utils.LocalFileModel).(*models.File)
+		file := c.Locals(configs.LocalFileModel).(*models.File)
 
 		if file.AccessToken != nil && !canAccessFile(c, *file.AccessToken) {
 			return fiber.ErrForbidden
