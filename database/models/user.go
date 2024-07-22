@@ -18,6 +18,7 @@ type User struct {
 	Password        string     `json:"-" gorm:"type:varchar(255)"`
 	ImageURL        string     `json:"image_url" gorm:"type:varchar(255)"`
 	EmailVerifiedAt *time.Time `json:"-"`
+	EnableIPCheck   bool       `json:"enable_ip_check" gorm:"default:true"`
 	IsOnline        bool       `json:"is_online" gorm:"-:all"`
 	IsBot           bool       `json:"is_bot" gorm:"default:false"`
 }

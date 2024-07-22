@@ -253,3 +253,11 @@ func (group) IsBanned(groupID, userID uint) bool {
 	database.DB.Model(&models.Ban{}).Where("user_id = ? and group_id = ?", userID, groupID).First(&ban)
 	return ban.Exists()
 }
+
+func (group) IsGroupUserExists(groupID, userID uint) bool {
+	var count int64
+	database.DB.Model(&models.GroupUser{}).Where("group_id = ? and user_id = ?", groupID, userID).
+		Limit(1).
+		Count(&count)
+	return count > 0
+}
