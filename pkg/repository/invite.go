@@ -37,7 +37,7 @@ func (i *invite) CreateCode() string {
 }
 
 func (i *invite) FindInviteByCode(id string) *models.Invite {
-	return FindModelBy[models.Invite]([]string{"key"}, []any{id})
+	return FindModelBy[models.Invite]([]string{"invites.key"}, []any{id})
 
 }
 

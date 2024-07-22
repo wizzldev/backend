@@ -30,6 +30,7 @@ func RegisterAPI(r fiber.Router) {
 	{
 		auth.Get("/me", handlers.Me.Hello)
 		auth.Put("/me", middlewares.NoBots, requests.Use[requests.UpdateMe](), middlewares.NewSimpleLimiter(3, 10*time.Minute, "Too many modifications, try again later"), handlers.Me.Update)
+		auth.Get("/me/ip-check", handlers.Me.SwitchIPCheck)
 		auth.Post("/me/profile-image", middlewares.NoBots, handlers.Me.UploadProfileImage)
 		auth.Delete("/me", middlewares.NoBots, handlers.Me.Delete)
 	}
@@ -72,7 +73,7 @@ func RegisterAPI(r fiber.Router) {
 
 		chat.Get("/message/:messageID", handlers.Chat.FindMessage)
 
-		chat.Post("/new-invite", middlewares.NewRoleMiddleware(role.InviteUser), requests.Use[requests.NewInvite](), handlers.Invite.Create)
+		chat.Post("/new-invite", middlewares.NewRoleMiddleware(role.InviteUser), requests.Use[requests.NewInvite](), middlewares.NewSimpleLimiter(3, 10*time.Minute, "Try again later before creating another"), handlers.Invite.Create)
 		chat.Use(HandleNotFoundError)
 	}
 

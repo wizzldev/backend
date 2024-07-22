@@ -72,3 +72,13 @@ func (m *me) Delete(c *fiber.Ctx) error {
 		"status": "ok",
 	})
 }
+
+func (m *me) SwitchIPCheck(c *fiber.Ctx) error {
+	user := authUser(c)
+	user.EnableIPCheck = !user.EnableIPCheck
+	database.DB.Save(&user)
+
+	return c.JSON(fiber.Map{
+		"enabled": user.EnableIPCheck,
+	})
+}

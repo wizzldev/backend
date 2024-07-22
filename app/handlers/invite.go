@@ -50,17 +50,20 @@ func (i invite) Use(c *fiber.Ctx) error {
 		return err
 	}
 
-	gu := &models.GroupUser{
-		HasGroup: models.HasGroupID(groupID),
-		HasUser:  models.HasUserID(userID),
-	}
-	database.DB.Save(gu)
+	if !repository.Group.IsGroupUserExists(groupID, userID) {
+		gu := &models.GroupUser{
+			HasGroup: models.HasGroupID(groupID),
+			HasUser:  models.HasUserID(userID),
+		}
+		database.DB.Save(gu)
 
-	serverID := strconv.Itoa(int(groupID))
-	_ = events.DispatchUserJoin(serverID, i.cache.GetGroupMemberIDs(serverID), authUser(c), groupID)
+		serverID := strconv.Itoa(int(groupID))
+		_ = events.DispatchUserJoin(serverID, i.cache.GetGroupMemberIDs(serverID), authUser(c), groupID)
+	}
 
 	return c.JSON(fiber.Map{
-		"status": "success",
+		"status":   "success",
+		"group_id": groupID,
 	})
 }
 

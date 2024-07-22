@@ -47,7 +47,7 @@ func (a auth) Login(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusUnauthorized, "Please verify your email before login")
 	}
 
-	if !repository.User.IsIPAllowed(user.ID, c.IP()) && !net.ParseIP(c.IP()).IsPrivate() {
+	if user.EnableIPCheck && !repository.User.IsIPAllowed(user.ID, c.IP()) && !net.ParseIP(c.IP()).IsPrivate() {
 		a.sendIPVerification(user, c.IP())
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"show_ip_modal": true,

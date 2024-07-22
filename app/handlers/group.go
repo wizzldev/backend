@@ -89,13 +89,15 @@ func (*group) GetInfo(c *fiber.Ctx) error {
 	g := repository.Group.GetChatUser(uint(id), userID)
 
 	return c.JSON(fiber.Map{
-		"id":         g.ID,
-		"created_at": g.CreatedAt,
-		"updated_at": g.UpdatedAt,
-		"image_url":  g.ImageURL,
-		"name":       g.Name,
-		"roles":      g.Roles,
-		"your_roles": repository.Group.GetUserRoles(g.ID, userID, *role.NewRoles(g.Roles)),
+		"id":                 g.ID,
+		"created_at":         g.CreatedAt,
+		"updated_at":         g.UpdatedAt,
+		"image_url":          g.ImageURL,
+		"name":               g.Name,
+		"roles":              g.Roles,
+		"is_private_message": g.IsPrivateMessage,
+		"is_verified":        g.Verified,
+		"your_roles":         repository.Group.GetUserRoles(g.ID, userID, *role.NewRoles(g.Roles)),
 	})
 }
 
