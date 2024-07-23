@@ -18,6 +18,10 @@ type invite struct {
 
 var Invite invite
 
+func (i *invite) Init(cache *services.Cache) {
+	i.cache = cache
+}
+
 func (invite) Create(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil {
@@ -55,7 +59,7 @@ func (i invite) Use(c *fiber.Ctx) error {
 			HasGroup: models.HasGroupID(groupID),
 			HasUser:  models.HasUserID(userID),
 		}
-		database.DB.Save(gu)
+		database.DB.Create(gu)
 
 		serverID := strconv.Itoa(int(groupID))
 		_ = events.DispatchUserJoin(serverID, i.cache.GetGroupMemberIDs(serverID), authUser(c), groupID)
