@@ -18,7 +18,7 @@ type invite struct {
 
 var Invite invite
 
-func (i *invite) Init(cache *services.Cache) {
+func (i *invite) Init(cache *services.WSCache) {
 	i.cache = cache
 }
 
