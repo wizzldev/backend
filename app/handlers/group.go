@@ -23,8 +23,9 @@ type group struct {
 
 var Group = &group{}
 
-func (g *group) Init(store *services.Storage) {
+func (g *group) Init(store *services.Storage, cache *services.WSCache) {
 	g.Storage = store
+	g.Cache = cache
 }
 
 func (*group) New(c *fiber.Ctx) error {
@@ -97,6 +98,7 @@ func (*group) GetInfo(c *fiber.Ctx) error {
 		"roles":              g.Roles,
 		"is_private_message": g.IsPrivateMessage,
 		"is_verified":        g.Verified,
+		"custom_invite":      g.CustomInvite,
 		"your_roles":         repository.Group.GetUserRoles(g.ID, userID, *role.NewRoles(g.Roles)),
 	})
 }
@@ -225,6 +227,33 @@ func (g *group) EditName(c *fiber.Ctx) error {
 		Type:     "update.name",
 		DataJSON: "{}",
 	})
+
+	return c.JSON(fiber.Map{
+		"status": "ok",
+	})
+}
+
+func (*group) CustomInvite(c *fiber.Ctx) error {
+	idInt, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+	id := uint(idInt)
+	data := validation[requests.CustomInvite](c)
+
+	if repository.Group.Find(id).IsPrivateMessage {
+		return fiber.ErrBadRequest
+	}
+
+	if repository.Group.CustomInviteExists(data.Invite) {
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+			"status": "already-exists",
+		})
+	}
+
+	g := repository.Group.Find(id)
+	g.CustomInvite = &data.Invite
+	database.DB.Save(g)
 
 	return c.JSON(fiber.Map{
 		"status": "ok",

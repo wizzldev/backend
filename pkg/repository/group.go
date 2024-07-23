@@ -91,6 +91,7 @@ func (group) GetContactsForUser(userID uint, page int, authUser *models.User) *[
 		GroupName        *string
 		ImageURL         *string
 		Verified         bool
+		CustomInvite     *string
 	}
 	_ = database.DB.Raw(`
 	select 
@@ -103,7 +104,8 @@ func (group) GetContactsForUser(userID uint, page int, authUser *models.User) *[
        	groups.is_private_message,
        	groups.name as group_name,
        	groups.image_url,
-		groups.verified
+		groups.verified,
+		groups.custom_invite
 	from messages
 	join (
     	select group_id, max(created_at) as max_created_at from messages
@@ -178,10 +180,12 @@ func (group) GetContactsForUser(userID uint, page int, authUser *models.User) *[
 		}
 
 		contact := Contact{
-			ID:       v.GroupID,
-			Name:     groupName,
-			ImageURL: imageURL,
-			Verified: v.Verified,
+			ID:               v.GroupID,
+			Name:             groupName,
+			ImageURL:         imageURL,
+			Verified:         v.Verified,
+			IsPrivateMessage: v.IsPrivateMessage,
+			CustomInvite:     v.CustomInvite,
 			LastMessage: LastMessage{
 				SenderID:   v.SenderID,
 				SenderName: v.SenderName,
@@ -257,6 +261,14 @@ func (group) IsBanned(groupID, userID uint) bool {
 func (group) IsGroupUserExists(groupID, userID uint) bool {
 	var count int64
 	database.DB.Model(&models.GroupUser{}).Where("group_id = ? and user_id = ?", groupID, userID).
+		Limit(1).
+		Count(&count)
+	return count > 0
+}
+
+func (group) CustomInviteExists(s string) bool {
+	var count int64
+	database.DB.Model(&models.Group{}).Where("custom_invite not null and lower(custom_invite) = lower(?)", s).
 		Limit(1).
 		Count(&count)
 	return count > 0
