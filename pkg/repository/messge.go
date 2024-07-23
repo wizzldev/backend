@@ -38,6 +38,20 @@ func (message) Latest(gID uint) (*[]models.Message, string, string) {
 	return &messages, "", ""
 }
 
+func (message) LatestOne(gID uint) *models.Message {
+	var m models.Message
+
+	database.DB.Model(&models.Message{}).
+		Preload("Sender").
+		Preload("Reply.Sender").
+		Preload("MessageLikes.User").
+		Where("group_id = ?", gID).
+		Order("created_at desc").
+		First(&m)
+
+	return &m
+}
+
 func (message) CursorPaginate(gID uint, cursor string) (Pagination[models.Message], error) {
 	query := database.DB.Model(&models.Message{}).Preload("Sender").
 		Preload("Reply.Sender").

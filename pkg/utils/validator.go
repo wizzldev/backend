@@ -7,6 +7,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/wizzldev/chat/pkg/utils/role"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
@@ -82,5 +83,9 @@ func RegisterCustomValidations() {
 		}
 		now := time.Now()
 		return date.After(now.AddDate(0, 0, 1)) && date.Before(now.AddDate(0, 6, 0))
+	})
+
+	_ = Validator.RegisterValidation("is_pointer", func(fl validator.FieldLevel) bool {
+		return fl.Field().Kind() == reflect.Ptr
 	})
 }

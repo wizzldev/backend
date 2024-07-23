@@ -11,6 +11,7 @@ import (
 
 func WS(r fiber.Router) {
 	ws.MessageHandler = app.WSActionHandler
+	ws.Init()
 
 	r.Use(middlewares.WSAuth)
 	r.Use(func(c *fiber.Ctx) error {

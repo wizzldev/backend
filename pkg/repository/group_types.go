@@ -11,9 +11,11 @@ type LastMessage struct {
 }
 
 type Contact struct {
-	ID          uint        `json:"id"`
-	Name        string      `json:"name"`
-	ImageURL    string      `json:"image"`
-	Verified    bool        `json:"is_verified"`
-	LastMessage LastMessage `json:"last_message"`
+	ID               uint        `json:"id"`
+	Name             string      `json:"name"`
+	ImageURL         string      `json:"image"`
+	Verified         bool        `json:"is_verified"`
+	IsPrivateMessage bool        `json:"is_private_message"`
+	CustomInvite     *string     `json:"custom_invite"`
+	LastMessage      LastMessage `json:"last_message"`
 }
