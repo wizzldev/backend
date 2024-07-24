@@ -13,10 +13,12 @@ import (
 	"github.com/wizzldev/chat/pkg/utils/role"
 	"github.com/wizzldev/chat/pkg/ws"
 	"slices"
+	"strconv"
 	"strings"
 )
 
 type group struct {
+	groupHelpers
 	*services.Storage
 	Cache *services.WSCache
 }
@@ -46,26 +48,23 @@ func (*group) New(c *fiber.Ctx) error {
 		roles = append(roles, r)
 	}
 
+	userID := authUserID(c)
+
 	g := models.Group{
 		ImageURL:         configs.DefaultGroupImage,
 		Name:             data.Name,
 		Roles:            roles,
 		IsPrivateMessage: false,
 		Users:            users,
+		HasUser:          models.HasUserID(userID),
 	}
 
 	database.DB.Create(&g)
 
-	userID := authUserID(c)
-
 	message := models.Message{
-		HasGroup: models.HasGroup{
-			GroupID: g.ID,
-		},
-		Type: "chat.create",
-		HasMessageSender: models.HasMessageSender{
-			SenderID: userID,
-		},
+		HasGroup:         models.HasGroupID(g.ID),
+		Type:             "chat.create",
+		HasMessageSender: models.HasMessageSenderID(userID),
 	}
 	database.DB.Create(&message)
 
@@ -103,33 +102,13 @@ func (*group) GetInfo(c *fiber.Ctx) error {
 	})
 }
 
-func (*group) GetAllRoles(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{
-		"roles": role.All(),
-		"recommended": []role.Role{
-			role.EditGroupImage,
-			role.EditGroupName,
-			role.EditGroupTheme,
-			role.SendMessage,
-			role.AttachFile,
-			role.DeleteMessage,
-			role.CreateIntegration,
-			role.KickUser,
-			role.InviteUser,
-		},
-	})
-}
-
 func (g *group) UploadGroupImage(c *fiber.Ctx) error {
-	serverID := c.Params("id")
-
-	id, err := c.ParamsInt("id")
+	gr, err := g.group(c.Params("id"))
 	if err != nil {
 		return err
 	}
 
-	gr := repository.Group.Find(uint(id))
-	if gr.ID < 1 || gr.IsPrivateMessage {
+	if gr.IsPrivateMessage {
 		return fiber.ErrBadRequest
 	}
 
@@ -143,41 +122,37 @@ func (g *group) UploadGroupImage(c *fiber.Ctx) error {
 		return err
 	}
 
-	gr.ImageURL = file.Discriminator + ".webp"
-	database.DB.Save(gr)
-
+	// FIX: firstly delete the image then save the new
 	if gr.ImageURL != configs.DefaultGroupImage {
 		_ = g.Storage.RemoveByDisc(strings.SplitN(gr.ImageURL, ".", 2)[0])
 	}
 
-	err = events.DispatchMessage(serverID, g.Cache.GetGroupMemberIDs(serverID), uint(id), authUser(c), &ws.ClientMessage{
+	gr.ImageURL = file.Discriminator + ".webp"
+	database.DB.Save(gr)
+
+	g.sendMessage(g.Cache, gr.ID, authUser(c), &ws.ClientMessage{
 		Type:     "update.image",
 		HookID:   c.Query("hook_id"),
 		DataJSON: "{}",
 	})
 
-	if err != nil {
-		return err
-	}
-
 	return c.JSON(gr)
 }
 
 func (g *group) ModifyRoles(c *fiber.Ctx) error {
-	id, err := c.ParamsInt("id")
 	serverID := c.Params("id")
+	gr, err := g.group(serverID)
 	if err != nil {
 		return err
 	}
 
-	gr := repository.Group.Find(uint(id))
-	if gr.ID < 1 || gr.IsPrivateMessage {
+	if gr.IsPrivateMessage {
 		return fiber.ErrBadRequest
 	}
 
 	roles := validation[requests.ModifyRoles](c)
 
-	userRoles := repository.Group.GetUserRoles(uint(id), authUserID(c), *role.NewRoles(gr.Roles))
+	userRoles := repository.Group.GetUserRoles(gr.ID, authUserID(c), *role.NewRoles(gr.Roles))
 	if !userRoles.Can(role.Creator) {
 		if slices.Contains(gr.Roles, string(role.Creator)) != slices.Contains(roles.Roles, string(role.Creator)) {
 			return fiber.ErrForbidden
@@ -188,9 +163,7 @@ func (g *group) ModifyRoles(c *fiber.Ctx) error {
 
 	database.DB.Save(gr)
 
-	userIDs := g.Cache.GetGroupMemberIDs(serverID)
-
-	_ = events.DispatchMessage(serverID, userIDs, uint(id), authUser(c), &ws.ClientMessage{
+	userIDs := g.sendMessage(g.Cache, gr.ID, authUser(c), &ws.ClientMessage{
 		Type:     "update.roles",
 		DataJSON: "{}",
 	})
@@ -206,14 +179,12 @@ func (g *group) ModifyRoles(c *fiber.Ctx) error {
 }
 
 func (g *group) EditName(c *fiber.Ctx) error {
-	id, err := c.ParamsInt("id")
-	serverID := c.Params("id")
+	gr, err := g.group(c.Params("id"))
 	if err != nil {
 		return err
 	}
 
-	gr := repository.Group.Find(uint(id))
-	if gr.ID < 1 || gr.IsPrivateMessage {
+	if gr.IsPrivateMessage {
 		return fiber.ErrBadRequest
 	}
 
@@ -221,9 +192,7 @@ func (g *group) EditName(c *fiber.Ctx) error {
 	gr.Name = data.Name
 	database.DB.Save(gr)
 
-	userIDs := g.Cache.GetGroupMemberIDs(serverID)
-
-	_ = events.DispatchMessage(serverID, userIDs, uint(id), authUser(c), &ws.ClientMessage{
+	g.sendMessage(g.Cache, gr.ID, authUser(c), &ws.ClientMessage{
 		Type:     "update.name",
 		DataJSON: "{}",
 	})
@@ -233,15 +202,15 @@ func (g *group) EditName(c *fiber.Ctx) error {
 	})
 }
 
-func (*group) CustomInvite(c *fiber.Ctx) error {
-	idInt, err := c.ParamsInt("id")
+func (g *group) CustomInvite(c *fiber.Ctx) error {
+	gr, err := g.group(c.Params("id"))
 	if err != nil {
 		return err
 	}
-	id := uint(idInt)
+
 	data := validation[requests.CustomInvite](c)
 
-	if repository.Group.Find(id).IsPrivateMessage {
+	if gr.IsPrivateMessage {
 		return fiber.ErrBadRequest
 	}
 
@@ -251,16 +220,59 @@ func (*group) CustomInvite(c *fiber.Ctx) error {
 		})
 	}
 
-	g := repository.Group.Find(id)
-	g.CustomInvite = &data.Invite
-	database.DB.Save(g)
+	gr.CustomInvite = &data.Invite
+	database.DB.Save(gr)
 
 	return c.JSON(fiber.Map{
 		"status": "ok",
 	})
 }
 
-func (*group) Delete(*fiber.Ctx) error {
-	// TODO
-	return nil
+func (g *group) Leave(c *fiber.Ctx) error {
+	gr, err := g.group(c.Params("id"))
+	if err != nil {
+		return err
+	}
+
+	userID := authUserID(c)
+
+	if gr.IsPrivateMessage || gr.UserID == userID {
+		return fiber.ErrBadRequest
+	}
+
+	repository.GroupUser.Delete(gr.ID, userID)
+
+	g.sendMessage(g.Cache, gr.ID, authUser(c), &ws.ClientMessage{
+		Type: "leave",
+	})
+
+	return c.JSON(fiber.Map{
+		"status": "ok",
+	})
+}
+
+func (g *group) Delete(c *fiber.Ctx) error {
+	gr, err := g.group(c.Params("id"))
+	if err != nil {
+		return err
+	}
+
+	if gr.ImageURL != configs.DefaultGroupImage {
+		_ = g.Storage.RemoveByDisc(strings.SplitN(gr.ImageURL, ".", 2)[0])
+	}
+
+	g.sendMessage(g.Cache, gr.ID, authUser(c), &ws.ClientMessage{
+		Type:    "delete",
+		Content: strconv.Itoa(int(gr.ID)),
+	})
+
+	worker := &models.Worker{
+		Command: "cleanup.group",
+		Data:    strconv.Itoa(int(gr.ID)),
+	}
+	database.DB.Create(&worker)
+
+	return c.JSON(fiber.Map{
+		"status": "ok",
+	})
 }

@@ -92,6 +92,8 @@ func (group) GetContactsForUser(userID uint, page int, authUser *models.User) *[
 		ImageURL         *string
 		Verified         bool
 		CustomInvite     *string
+		UserID           uint
+		SenderNickName   *string
 	}
 	_ = database.DB.Raw(`
 	select 
@@ -105,7 +107,9 @@ func (group) GetContactsForUser(userID uint, page int, authUser *models.User) *[
        	groups.name as group_name,
        	groups.image_url,
 		groups.verified,
-		groups.custom_invite
+		groups.custom_invite,
+		groups.user_id,
+		group_user.nick_name as sender_nick_name
 	from messages
 	join (
     	select group_id, max(created_at) as max_created_at from messages
@@ -115,8 +119,11 @@ func (group) GetContactsForUser(userID uint, page int, authUser *models.User) *[
 	and messages.created_at = latest_messages.max_created_at
 	join users on messages.sender_id = users.id
 	join groups on messages.group_id = groups.id
+	join group_user on group_user.user_id = messages.sender_id and group_user.group_id = groups.id
 	where groups.id in (
-		select distinct group_user.group_id from group_user where group_user.user_id = ?
+		select distinct group_user.group_id 
+		from group_user 
+		where group_user.user_id = ? and group_user.user_id
 	)
 	order by message_created_at desc limit 15 offset `+strconv.Itoa(offset)+`
 	`, userID).Find(&data).Error
@@ -186,9 +193,11 @@ func (group) GetContactsForUser(userID uint, page int, authUser *models.User) *[
 			Verified:         v.Verified,
 			IsPrivateMessage: v.IsPrivateMessage,
 			CustomInvite:     v.CustomInvite,
+			CreatorID:        v.UserID,
 			LastMessage: LastMessage{
 				SenderID:   v.SenderID,
 				SenderName: v.SenderName,
+				NickName:   v.SenderNickName,
 				Content:    v.MessageContent,
 				Type:       v.MessageType,
 				Date:       v.MessageCreatedAt,
@@ -211,7 +220,8 @@ func (group) GetChatUser(chatID uint, userID uint) *models.Group {
 		select users.* from group_user
 		inner join groups on groups.id = group_user.group_id
 		inner join users on users.id = group_user.user_id
-		where group_id = ? and users.id != ? limit 1
+		where group_id = ? and users.id != ?
+		limit 1
 		`, data.ID, userID).Scan(&user).Error
 		data.ImageURL = user.ImageURL
 		if user.ID > 0 {

@@ -164,7 +164,7 @@ func (s *Storage) StoreAvatar(fileH *multipart.FileHeader) (*models.File, error)
 		return nil, err
 	}
 
-	fileModel := models.File{
+	fileModel := &models.File{
 		Path:          path,
 		Name:          "",
 		Type:          "avatar",
@@ -172,13 +172,13 @@ func (s *Storage) StoreAvatar(fileH *multipart.FileHeader) (*models.File, error)
 		ContentType:   "image/webp",
 		Size:          fileInfo.Size(),
 	}
-	err = database.DB.Create(&fileModel).Error
+	err = database.DB.Create(fileModel).Error
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &fileModel, nil
+	return fileModel, nil
 }
 
 func (s *Storage) Store(fileH *multipart.FileHeader, token ...string) (*models.File, error) {
