@@ -18,7 +18,11 @@ type invite struct {
 
 var Invite invite
 
-func (invite) Create(c *fiber.Ctx) error {
+func (i *invite) Init(cache *services.WSCache) {
+	i.cache = cache
+}
+
+func (*invite) Create(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil {
 		return err
@@ -42,7 +46,7 @@ func (invite) Create(c *fiber.Ctx) error {
 	return c.JSON(i)
 }
 
-func (i invite) Use(c *fiber.Ctx) error {
+func (i *invite) Use(c *fiber.Ctx) error {
 	userID := authUserID(c)
 
 	groupID, err := i.getGroupID(c.Params("code", ""), userID)
@@ -55,7 +59,7 @@ func (i invite) Use(c *fiber.Ctx) error {
 			HasGroup: models.HasGroupID(groupID),
 			HasUser:  models.HasUserID(userID),
 		}
-		database.DB.Save(gu)
+		database.DB.Create(gu)
 
 		serverID := strconv.Itoa(int(groupID))
 		_ = events.DispatchUserJoin(serverID, i.cache.GetGroupMemberIDs(serverID), authUser(c), groupID)
@@ -67,7 +71,7 @@ func (i invite) Use(c *fiber.Ctx) error {
 	})
 }
 
-func (invite) getGroupID(code string, userID uint) (uint, error) {
+func (*invite) getGroupID(code string, userID uint) (uint, error) {
 	inv := repository.Invite.FindInviteByCode(code)
 	fmt.Println("code", code, inv)
 	if inv.IsValid() {
