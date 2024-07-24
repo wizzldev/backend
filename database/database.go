@@ -2,7 +2,6 @@ package database
 
 import (
 	"fmt"
-	"github.com/wizzldev/chat/database/models"
 	"log"
 
 	"github.com/wizzldev/chat/pkg/configs"
@@ -12,25 +11,6 @@ import (
 )
 
 var DB *gorm.DB
-
-func getModels() []interface{} {
-	return []interface{}{
-		&models.Message{},
-		&models.MessageLike{},
-		&models.Group{},
-		&models.Ban{},
-		&models.Invite{},
-		&models.Block{},
-		&models.EmailVerification{},
-		&models.ResetPassword{},
-		&models.Theme{},
-		&models.GroupUser{},
-		&models.AllowedIP{},
-		&models.Session{},
-		&models.User{},
-		&models.File{},
-	}
-}
 
 func MustConnect() {
 	dsn := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?charset=utf8mb4&parseTime=True&loc=Local", configs.Env.Database.Username, configs.Env.Database.Password, configs.Env.Database.Host, configs.Env.Database.Port, configs.Env.Database.Database)
@@ -44,7 +24,7 @@ func MustConnect() {
 
 	log.Println("successfully connected to the database!")
 	if configs.Env.Debug {
-		db.Logger = logger.Default.LogMode(logger.Warn)
+		db.Logger = logger.Default.LogMode(logger.Info)
 	} else {
 		db.Logger = logger.Default.LogMode(logger.Error)
 	}

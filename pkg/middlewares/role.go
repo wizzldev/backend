@@ -24,7 +24,13 @@ func NewRoleMiddleware(r role.Role) fiber.Handler {
 			return c.Next()
 		}
 
-		roles := repository.Group.GetUserRoles(uint(gID), userID, *role.NewRoles(g.Roles))
+		var roles role.Roles
+		if g.UserID == userID {
+			roles = *role.All()
+		} else {
+			roles = repository.Group.GetUserRoles(uint(gID), userID, *role.NewRoles(g.Roles))
+		}
+
 		if !roles.Can(r) {
 			return fiber.NewError(fiber.StatusForbidden, "You are not allowed to access this resource")
 		}
