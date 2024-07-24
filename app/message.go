@@ -38,22 +38,23 @@ func MessageActionHandler(conn *ws.Connection, userID uint, msg *ws.ClientMessag
 		return fmt.Errorf("user %d not in group members", userID)
 	}
 
+	isPM := cache.IsPM(gID)
 	roles := cache.GetRoles(userID, gID)
 	roleErr := errors.New("you do not have a permit")
 
 	switch msg.Type {
 	case "message":
-		if !roles.Can(role.SendMessage) {
+		if !roles.Can(role.SendMessage) && !isPM {
 			return roleErr
 		}
 		return events.DispatchMessage(id, members, gID, user, msg)
 	case "message.like":
 		return events.DispatchMessageLike(id, members, gID, user, msg)
 	case "message.delete":
-		if !roles.Can(role.DeleteMessage) {
+		if !roles.Can(role.DeleteMessage) && !isPM {
 			return roleErr
 		}
-		return events.DispatchMessageDelete(id, members, user, msg, roles.Can(role.DeleteOtherMemberMessage) && !cache.IsPM(gID))
+		return events.DispatchMessageDelete(id, members, user, msg, roles.Can(role.DeleteOtherMemberMessage) && !isPM)
 	default:
 		conn.Send(ws.MessageWrapper{
 			Message: &ws.Message{
