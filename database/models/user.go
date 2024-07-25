@@ -21,6 +21,7 @@ type User struct {
 	EnableIPCheck   bool       `json:"enable_ip_check" gorm:"default:true"`
 	IsOnline        bool       `json:"is_online" gorm:"-:all"`
 	IsBot           bool       `json:"is_bot" gorm:"default:false"`
+	GroupUser       *GroupUser `json:"group_user,omitempty"`
 }
 
 var ctx = context.Background()

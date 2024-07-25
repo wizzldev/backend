@@ -68,15 +68,15 @@ func RegisterAPI(r fiber.Router) {
 		chat.Put("/emoji", middlewares.NewRoleMiddleware(role.Admin), requests.Use[requests.Emoji](), handlers.Group.Emoji)
 		chat.Get("/leave", handlers.Group.Leave)
 		chat.Delete("/", middlewares.NewRoleMiddleware(role.Creator), handlers.Group.Delete)
+		chat.Put("/roles", middlewares.NewRoleMiddleware(role.Admin), requests.Use[requests.ModifyRoles](), handlers.Group.ModifyRoles)
+		chat.Get("/message/:messageID", handlers.Chat.FindMessage)
+		chat.Post("/new-invite", middlewares.NewRoleMiddleware(role.InviteUser), requests.Use[requests.NewInvite](), middlewares.NewSimpleLimiter(3, 10*time.Minute, "Try again later before creating another"), handlers.Invite.Create)
 
 		chat.Post("/file", middlewares.NewRoleMiddleware(role.AttachFile), handlers.Chat.UploadFile)
 		chat.Post("/group-image", middlewares.NewRoleMiddleware(role.EditGroupImage), handlers.Group.UploadGroupImage)
 
-		chat.Put("/roles", middlewares.NewRoleMiddleware(role.Admin), requests.Use[requests.ModifyRoles](), handlers.Group.ModifyRoles)
-
-		chat.Get("/message/:messageID", handlers.Chat.FindMessage)
-
-		chat.Post("/new-invite", middlewares.NewRoleMiddleware(role.InviteUser), requests.Use[requests.NewInvite](), middlewares.NewSimpleLimiter(3, 10*time.Minute, "Try again later before creating another"), handlers.Invite.Create)
+		chat.Get("/users", handlers.Group.Users)
+		chat.Get("/user_count", handlers.Group.UserCount)
 		chat.Use(HandleNotFoundError)
 	}
 

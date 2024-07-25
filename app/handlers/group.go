@@ -292,3 +292,28 @@ func (g *group) Emoji(c *fiber.Ctx) error {
 		"status": "ok",
 	})
 }
+
+func (g *group) Users(c *fiber.Ctx) error {
+	gID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
+	data, err := repository.Group.Users(uint(gID), c.Query("cursor"))
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(data)
+}
+
+func (g *group) UserCount(c *fiber.Ctx) error {
+	gID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(fiber.Map{
+		"count": repository.Group.UserCount(uint(gID)),
+	})
+}
