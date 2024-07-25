@@ -65,6 +65,7 @@ func RegisterAPI(r fiber.Router) {
 		chat.Put("/", middlewares.NewRoleMiddleware(role.EditGroupName), requests.Use[requests.EditGroupName](), handlers.Group.EditName)
 		chat.Get("/paginate", handlers.Chat.Messages)
 		chat.Put("/invite", middlewares.NewRoleMiddleware(role.Creator), requests.Use[requests.CustomInvite](), middlewares.NewSimpleLimiter(3, 15*time.Minute, "too many requests"), handlers.Group.CustomInvite)
+		chat.Put("/emoji", middlewares.NewRoleMiddleware(role.Admin), requests.Use[requests.Emoji](), handlers.Group.Emoji)
 		chat.Get("/leave", handlers.Group.Leave)
 		chat.Delete("/", middlewares.NewRoleMiddleware(role.Creator), handlers.Group.Delete)
 

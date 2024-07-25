@@ -98,6 +98,7 @@ func (*group) GetInfo(c *fiber.Ctx) error {
 		"is_private_message": g.IsPrivateMessage,
 		"is_verified":        g.Verified,
 		"custom_invite":      g.CustomInvite,
+		"emoji":              g.Emoji,
 		"your_roles":         repository.Group.GetUserRoles(g.ID, userID, *role.NewRoles(g.Roles)),
 	})
 }
@@ -271,6 +272,21 @@ func (g *group) Delete(c *fiber.Ctx) error {
 		Data:    strconv.Itoa(int(gr.ID)),
 	}
 	database.DB.Create(&worker)
+
+	return c.JSON(fiber.Map{
+		"status": "ok",
+	})
+}
+
+func (g *group) Emoji(c *fiber.Ctx) error {
+	gr, err := g.group(c.Params("id"))
+	if err != nil {
+		return err
+	}
+
+	data := validation[requests.Emoji](c)
+	gr.Emoji = &data.Emoji
+	database.DB.Save(gr)
 
 	return c.JSON(fiber.Map{
 		"status": "ok",
