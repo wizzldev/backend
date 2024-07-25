@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2/log"
 	"github.com/wizzldev/chat/database"
 	"github.com/wizzldev/chat/database/models"
+	"github.com/wizzldev/chat/pkg/repository/paginator"
 	"github.com/wizzldev/chat/pkg/utils/role"
 	"strconv"
 	"time"
@@ -282,4 +283,32 @@ func (group) CustomInviteExists(s string) bool {
 		Limit(1).
 		Count(&count)
 	return count > 0
+}
+
+func (group) Users(gID uint, cursor string) (Pagination[models.User], error) {
+	query := database.DB.Model(&models.User{}).
+		Preload("GroupUser").
+		Where("users.id in (select user_id from group_user where group_id = ?)", gID)
+
+	data, next, prev, err := paginator.Paginate[models.User](query, &paginator.Config{
+		Cursor:     cursor,
+		Order:      "desc",
+		Limit:      30,
+		PointsNext: false,
+	})
+
+	return Pagination[models.User]{
+		Data:       data,
+		NextCursor: next,
+		Previous:   prev,
+	}, err
+}
+
+func (group) UserCount(gID uint) int {
+	var count int64
+	database.DB.Model(&models.User{}).
+		Where("users.id in (select user_id from group_user where group_id = ?)", gID).
+		Count(&count)
+
+	return int(count)
 }
