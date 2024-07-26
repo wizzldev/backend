@@ -35,6 +35,11 @@ func RegisterAPI(r fiber.Router) {
 		auth.Delete("/me", middlewares.NoBots, handlers.Me.Delete)
 	}
 
+	mobile := r.Group("/mobile", middlewares.NoBots)
+	{
+		mobile.Post("/register-push-notifications", requests.Use[requests.PushToken](), handlers.Mobile.RegisterPushNotification)
+	}
+
 	security := auth.Group("/security", middlewares.NoBots)
 	{
 		security.Get("/sessions", handlers.Security.Sessions)
