@@ -6,6 +6,10 @@ import (
 )
 
 func DispatchPushNotification(userIDs []uint, title, body, imageURL string) error {
+	if len(userIDs) == 0 {
+		return nil
+	}
+
 	err := push_notification.PushNotification.Init()
 	if err != nil {
 		return err
