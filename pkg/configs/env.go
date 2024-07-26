@@ -36,14 +36,15 @@ type email struct {
 }
 
 type env struct {
-	Frontend    string `env:"FRONTEND_URL"`
-	Debug       bool   `env:"DEBUG"`
-	ServerPort  string `env:"SERVER_PORT"`
-	MaxFileSize int64  `env:"MAX_FILE_SIZE"`
-	Database    databaseEnv
-	Session     session
-	Redis       redis
-	Email       email
+	Frontend        string `env:"FRONTEND_URL"`
+	Debug           bool   `env:"DEBUG"`
+	ServerPort      string `env:"SERVER_PORT"`
+	MaxFileSize     int64  `env:"MAX_FILE_SIZE"`
+	Database        databaseEnv
+	Session         session
+	Redis           redis
+	Email           email
+	FirebaseAuthKey string `env:"FIREBASE_AUTH_KEY"`
 }
 
 var Env env

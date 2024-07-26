@@ -2,6 +2,7 @@ package events
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/wizzldev/chat/database"
 	"github.com/wizzldev/chat/database/models"
 	"github.com/wizzldev/chat/pkg/logger"
@@ -71,7 +72,7 @@ func DispatchMessage(wsID string, userIDs []uint, gID uint, user *models.User, m
 		},
 		HookID: msg.HookID,
 	})
-
 	logger.WSSend(wsID, "message", user.ID, sentTo)
-	return nil
+
+	return DispatchPushNotification(utils.Difference(userIDs, sentTo), fmt.Sprintf("%v %v", user.FirstName, user.LastName), message.Content, utils.GetAvatarURL(user.ImageURL))
 }

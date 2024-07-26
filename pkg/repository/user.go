@@ -76,3 +76,19 @@ func (user) Search(f string, l string, e string, page int) []*models.User {
 
 	return users
 }
+
+func (user) FindAndroidNotifications(userIDs []uint) []string {
+	var notifications []models.AndroidPushNotification
+	database.DB.Model(&models.AndroidPushNotification{}).Where("user_id in ?", userIDs).Find(&notifications)
+	var tokens []string
+	for _, notification := range notifications {
+		tokens = append(tokens, notification.Token)
+	}
+	return tokens
+}
+
+func (user) IsAndroidNotificationTokenExists(userID uint, token string) bool {
+	var count int64
+	database.DB.Model(&models.AndroidPushNotification{}).Where("user_id = ? and token = ?", userID, token).Limit(1).Count(&count)
+	return count > 0
+}

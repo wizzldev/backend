@@ -7,6 +7,7 @@ func getModels() []interface{} {
 		&models.Message{},
 		&models.MessageLike{},
 		&models.Worker{},
+		&models.AndroidPushNotification{},
 		&models.Group{},
 		&models.Ban{},
 		&models.Invite{},
