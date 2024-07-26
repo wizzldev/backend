@@ -54,9 +54,14 @@ func (p *pushNotification) Send(tokens []string, title string, body string, imag
 	}
 	_, err := p.client.SendMulticast(context.Background(), &messaging.MulticastMessage{
 		Notification: &messaging.Notification{
-			Title:    title,
-			Body:     body,
-			ImageURL: imageURL,
+			Title: title,
+			Body:  body,
+		},
+		Android: &messaging.AndroidConfig{
+			Notification: &messaging.AndroidNotification{
+				Icon:  imageURL,
+				Color: "#B26AF4",
+			},
 		},
 		Tokens: tokens,
 	})
