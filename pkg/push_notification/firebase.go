@@ -14,7 +14,10 @@ type pushNotification struct {
 	client *messaging.Client
 }
 
-var PushNotification *pushNotification
+var PushNotification = &pushNotification{
+	init:   false,
+	client: nil,
+}
 
 func (p *pushNotification) Init() error {
 	if p.init {
@@ -46,6 +49,9 @@ func (p *pushNotification) Init() error {
 }
 
 func (p *pushNotification) Send(tokens []string, title string, body string, imageURL string) error {
+	if !p.init {
+		return nil
+	}
 	_, err := p.client.SendMulticast(context.Background(), &messaging.MulticastMessage{
 		Notification: &messaging.Notification{
 			Title:    title,
