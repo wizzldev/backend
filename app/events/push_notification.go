@@ -3,9 +3,16 @@ package events
 import (
 	"github.com/wizzldev/chat/pkg/repository"
 	"github.com/wizzldev/chat/pkg/services"
+	"github.com/wizzldev/chat/pkg/utils"
 )
 
-func DispatchPushNotification(userIDs []uint, gID uint, title, body, imageURL string) error {
+type PushNotificationData struct {
+	Title string
+	Body  string
+	Image string
+}
+
+func DispatchPushNotification(userIDs []uint, gID uint, data PushNotificationData) error {
 	if len(userIDs) == 0 {
 		return nil
 	}
@@ -20,5 +27,5 @@ func DispatchPushNotification(userIDs []uint, gID uint, title, body, imageURL st
 		return nil
 	}
 
-	return services.PushNotification.Send(tokens, gID, title, body, imageURL)
+	return services.PushNotification.Send(tokens, gID, data.Title, data.Body, utils.GetAvatarURL(data.Image, 24))
 }
