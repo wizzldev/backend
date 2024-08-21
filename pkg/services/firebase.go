@@ -8,6 +8,7 @@ import (
 	"github.com/wizzldev/chat/pkg/configs"
 	"golang.org/x/net/context"
 	"google.golang.org/api/option"
+	"strconv"
 )
 
 type pushNotification struct {
@@ -61,11 +62,17 @@ func (p *pushNotification) Send(tokens []string, gID uint, title string, body st
 		Android: &messaging.AndroidConfig{
 			CollapseKey: fmt.Sprintf("group_%d", gID),
 			Notification: &messaging.AndroidNotification{
+				Title: title,
+				Body:  body,
 				Icon:  imageURL,
 				Color: "#B26AF4",
+				Tag:   fmt.Sprintf("group_%d", gID),
 			},
 		},
 		Tokens: tokens,
+		Data: map[string]string{
+			"chat_id": strconv.Itoa(int(gID)),
+		},
 	})
 	return err
 }
