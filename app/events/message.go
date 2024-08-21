@@ -74,5 +74,5 @@ func DispatchMessage(wsID string, userIDs []uint, gID uint, user *models.User, m
 	})
 	logger.WSSend(wsID, "message", user.ID, sentTo)
 
-	return DispatchPushNotification(utils.Difference(userIDs, sentTo), fmt.Sprintf("%v %v", user.FirstName, user.LastName), message.Content, utils.GetAvatarURL(user.ImageURL))
+	return DispatchPushNotification(utils.Difference(userIDs, sentTo), gID, fmt.Sprintf("%v %v", user.FirstName, user.LastName), message.Content, utils.GetAvatarURL(user.ImageURL))
 }

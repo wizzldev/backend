@@ -1,16 +1,16 @@
 package events
 
 import (
-	"github.com/wizzldev/chat/pkg/push_notification"
 	"github.com/wizzldev/chat/pkg/repository"
+	"github.com/wizzldev/chat/pkg/services"
 )
 
-func DispatchPushNotification(userIDs []uint, title, body, imageURL string) error {
+func DispatchPushNotification(userIDs []uint, gID uint, title, body, imageURL string) error {
 	if len(userIDs) == 0 {
 		return nil
 	}
 
-	err := push_notification.PushNotification.Init()
+	err := services.PushNotification.Init()
 	if err != nil {
 		return err
 	}
@@ -20,5 +20,5 @@ func DispatchPushNotification(userIDs []uint, title, body, imageURL string) erro
 		return nil
 	}
 
-	return push_notification.PushNotification.Send(tokens, title, body, imageURL)
+	return services.PushNotification.Send(tokens, gID, title, body, imageURL)
 }

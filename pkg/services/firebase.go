@@ -1,9 +1,10 @@
-package push_notification
+package services
 
 import (
 	"encoding/base64"
 	firebase "firebase.google.com/go"
 	"firebase.google.com/go/messaging"
+	"fmt"
 	"github.com/wizzldev/chat/pkg/configs"
 	"golang.org/x/net/context"
 	"google.golang.org/api/option"
@@ -48,7 +49,7 @@ func (p *pushNotification) Init() error {
 	return nil
 }
 
-func (p *pushNotification) Send(tokens []string, title string, body string, imageURL string) error {
+func (p *pushNotification) Send(tokens []string, gID uint, title string, body string, imageURL string) error {
 	if !p.init {
 		return nil
 	}
@@ -58,6 +59,7 @@ func (p *pushNotification) Send(tokens []string, title string, body string, imag
 			Body:  body,
 		},
 		Android: &messaging.AndroidConfig{
+			CollapseKey: fmt.Sprintf("group_%d", gID),
 			Notification: &messaging.AndroidNotification{
 				Icon:  imageURL,
 				Color: "#B26AF4",
