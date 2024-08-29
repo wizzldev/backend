@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2/log"
 	"github.com/wizzldev/chat/database"
 	"github.com/wizzldev/chat/database/models"
+	"github.com/wizzldev/chat/pkg/encryption"
 	"github.com/wizzldev/chat/pkg/repository/paginator"
 	"github.com/wizzldev/chat/pkg/utils/role"
 	"strconv"
@@ -82,22 +83,24 @@ func (group) GetContactsForUser(userID uint, page int, authUser *models.User) *[
 	var offset = perPage * (page - 1)
 
 	var data []struct {
-		MessageContent   *string
-		MessageType      string
-		MessageCreatedAt time.Time
-		SenderID         uint
-		SenderName       string
-		GroupID          uint
-		IsPrivateMessage bool
-		GroupName        *string
-		ImageURL         *string
-		Verified         bool
-		CustomInvite     *string
-		UserID           uint
-		SenderNickName   *string
+		IsMessageEncrypted bool
+		MessageContent     *string
+		MessageType        string
+		MessageCreatedAt   time.Time
+		SenderID           uint
+		SenderName         string
+		GroupID            uint
+		IsPrivateMessage   bool
+		GroupName          *string
+		ImageURL           *string
+		Verified           bool
+		CustomInvite       *string
+		UserID             uint
+		SenderNickName     *string
 	}
 	_ = database.DB.Raw(`
 	select 
+	    messages.encrypted as is_message_encrypted,
 		messages.content as message_content,
 		messages.type as message_type,
 		messages.created_at as message_created_at,
@@ -187,6 +190,17 @@ func (group) GetContactsForUser(userID uint, page int, authUser *models.User) *[
 			}
 		}
 
+		var msgContent = *v.MessageContent
+
+		if v.IsMessageEncrypted {
+			s, err := encryption.DecryptMessage(msgContent)
+			if err != nil {
+				msgContent = "#app.excDecFail"
+			} else {
+				msgContent = s
+			}
+		}
+
 		contact := Contact{
 			ID:               v.GroupID,
 			Name:             groupName,
@@ -199,7 +213,7 @@ func (group) GetContactsForUser(userID uint, page int, authUser *models.User) *[
 				SenderID:   v.SenderID,
 				SenderName: v.SenderName,
 				NickName:   v.SenderNickName,
-				Content:    v.MessageContent,
+				Content:    &msgContent,
 				Type:       v.MessageType,
 				Date:       v.MessageCreatedAt,
 			},

@@ -24,7 +24,10 @@ func (m *Message) AfterFind(*gorm.DB) error {
 	}
 	var err error
 	m.Content, err = encryption.DecryptMessage(m.Content)
-	return err
+	if err != nil {
+		m.Content = "#app.excDecFail"
+	}
+	return nil
 }
 
 func (m *Message) BeforeCreate(*gorm.DB) error {
