@@ -5,6 +5,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"github.com/wizzldev/chat/pkg/configs"
 	"io"
 )
@@ -30,6 +31,10 @@ func EncryptMessage(m string) (string, error) {
 }
 
 func DecryptMessage(cipherText string) (string, error) {
+	if cipherText == "" {
+		return "", errors.New("cipherText is empty")
+	}
+
 	data, err := base64.StdEncoding.DecodeString(cipherText)
 	if err != nil {
 		return "", err
