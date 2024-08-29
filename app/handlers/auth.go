@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"fmt"
-	"net"
+	"github.com/wizzldev/chat/pkg/services"
 	"strconv"
 	"time"
 
@@ -23,54 +23,28 @@ type auth struct{}
 var Auth auth
 
 func (a auth) Login(c *fiber.Ctx) error {
-	sess, err := middlewares.Session(c)
+	loginRequest := validation[requests.Login](c)
+
+	service := services.NewAuth(c)
+	data, err := service.Login(&services.AuthRequest{
+		Email:    loginRequest.Email,
+		Password: loginRequest.Password,
+	})
+
 	if err != nil {
 		return err
 	}
 
-	loginRequest := validation[requests.Login](c)
-
-	user := repository.User.FindByEmail(loginRequest.Email)
-	if user.ID < 1 {
-		return fiber.NewError(fiber.StatusUnauthorized, "Invalid email or password")
-	}
-
-	if user.IsBot {
-		return fiber.NewError(fiber.StatusBadRequest, "Cannot use bot as user")
-	}
-
-	if !utils.NewPassword(loginRequest.Password).Compare(user.Password) {
-		return fiber.NewError(fiber.StatusUnauthorized, "Invalid email or password")
-	}
-
-	if user.EmailVerifiedAt == nil {
-		return fiber.NewError(fiber.StatusUnauthorized, "Please verify your email before login")
-	}
-
-	if user.EnableIPCheck && !repository.User.IsIPAllowed(user.ID, c.IP()) && !net.ParseIP(c.IP()).IsPrivate() {
-		a.sendIPVerification(user, c.IP())
+	if data.MustVerifyIP {
+		a.sendIPVerification(data.User, c.IP())
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"show_ip_modal": true,
 		})
 	}
 
-	sess.Set(configs.SessionAuthUserID, user.ID)
-	sessID := sess.ID()
-	err = sess.Save()
-	if err != nil {
-		return err
-	}
-
-	database.DB.Create(&models.Session{
-		HasUser:   models.HasUserID(user.ID),
-		IP:        c.IP(),
-		SessionID: sessID,
-		Agent:     string(c.Request().Header.Peek("User-Agent")),
-	})
-
 	return c.JSON(fiber.Map{
-		"user":    user,
-		"session": "Bearer " + sessID,
+		"user":    data.User,
+		"session": "Bearer " + data.Token,
 	})
 }
 

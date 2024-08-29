@@ -40,6 +40,7 @@ func main() {
 	routes.RegisterStorage(app.Group("/storage"))
 	routes.WS(app.Group("/ws"))
 	routes.RegisterBot(app.Group("/bot"))
+	routes.RegisterDev(app.Group("/developers"))
 	routes.RegisterAPI(app)
 
 	app.Use(routes.HandleNotFoundError)

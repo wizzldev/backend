@@ -14,7 +14,7 @@ import (
 var Store = session.New(session.Config{
 	Expiration: time.Duration(configs.Env.Session.LifespanSeconds) * time.Second,
 	KeyGenerator: func() string {
-		return "client:" + utils.UUIDv4() + "$" + strings.ToLower(utils2.NewRandom().String(25))
+		return "w_" + utils.UUIDv4() + "__" + strings.ToLower(utils2.NewRandom().String(50))
 	},
 	KeyLookup: "header:Authorization",
 	Storage:   rdb.Redis,
