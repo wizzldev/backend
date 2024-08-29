@@ -18,6 +18,7 @@ func getModels() []interface{} {
 		&models.GroupUser{},
 		&models.AllowedIP{},
 		&models.Session{},
+		&models.UserBot{},
 		&models.User{},
 		&models.File{},
 	}

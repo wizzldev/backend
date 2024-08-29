@@ -58,6 +58,7 @@ func DispatchMessage(wsID string, userIDs []uint, gID uint, user *models.User, m
 		userIDs = utils.RemoveFromSlice(userIDs, user.ID)
 	}
 
+	fmt.Println("sending to", userIDs)
 	sentTo := ws.WebSocket.BroadcastToUsers(userIDs, wsID, ws.Message{
 		Event: "message",
 		Data: ChatMessage{

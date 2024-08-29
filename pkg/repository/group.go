@@ -307,7 +307,7 @@ func (group) Users(gID uint, cursor string) (Pagination[models.User], error) {
 func (group) UserCount(gID uint) int {
 	var count int64
 	database.DB.Model(&models.User{}).
-		Where("users.id in (select user_id from group_user where group_id = ?)", gID).
+		Where("users.is_bot = 0 and users.id in (select user_id from group_user where group_id = ?)", gID).
 		Count(&count)
 
 	return int(count)

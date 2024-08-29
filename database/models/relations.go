@@ -27,6 +27,15 @@ func HasUserID(id uint) HasUser {
 	return HasUser{UserID: id}
 }
 
+type HasBot struct {
+	BotID uint  `json:"-"`
+	Bot   *User `json:"bot,omitempty" gorm:"constraint:OnDelete:CASCADE;foreignKey:BotID"`
+}
+
+func HasBotID(id uint) HasBot {
+	return HasBot{BotID: id}
+}
+
 type HasMessageReply struct {
 	ReplyID *uint    `json:"-" gorm:"message_id;default:NULL"`
 	Reply   *Message `json:"reply,omitempty" gorm:"constraint:OnDelete:CASCADE;foreignKey:ReplyID"`
