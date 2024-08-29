@@ -25,7 +25,7 @@ func (m *Message) AfterFind(*gorm.DB) error {
 	var err error
 	m.Content, err = encryption.DecryptMessage(m.Content)
 	if err != nil {
-		m.Content = "#app.excDecFail"
+		m.Content = "#fail.decrypt"
 	}
 	return nil
 }

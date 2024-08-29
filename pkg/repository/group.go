@@ -195,7 +195,7 @@ func (group) GetContactsForUser(userID uint, page int, authUser *models.User) *[
 		if v.IsMessageEncrypted {
 			s, err := encryption.DecryptMessage(msgContent)
 			if err != nil {
-				msgContent = "#app.excDecFail"
+				msgContent = "#fail.decrypt"
 			} else {
 				msgContent = s
 			}
