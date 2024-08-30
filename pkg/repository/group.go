@@ -100,20 +100,20 @@ func (group) GetContactsForUser(userID uint, page int, authUser *models.User) *[
 	}
 	_ = database.DB.Raw(`
 	select 
-	    messages.encrypted as is_message_encrypted,
-		messages.content as message_content,
-		messages.type as message_type,
-		messages.created_at as message_created_at,
-       	users.id as sender_id,
-       	users.first_name as sender_name,
-       	groups.id as group_id,
-       	groups.is_private_message,
-       	groups.name as group_name,
-       	groups.image_url,
-		groups.verified,
-		groups.custom_invite,
-		groups.user_id,
-		group_user.nick_name as sender_nick_name
+    	messages.encrypted as is_message_encrypted,
+    	messages.content as message_content,
+    	messages.type as message_type,
+    	messages.created_at as message_created_at,
+    	users.id as sender_id,
+    	users.first_name as sender_name,
+    	groups.id as group_id,
+    	groups.is_private_message,
+    	groups.name as group_name,
+    	groups.image_url,
+    	groups.verified,
+    	groups.custom_invite,
+    	groups.user_id,
+    	group_user.nick_name as sender_nick_name
 	from messages
 	join (
     	select group_id, max(created_at) as max_created_at from messages
@@ -121,15 +121,18 @@ func (group) GetContactsForUser(userID uint, page int, authUser *models.User) *[
 	) as latest_messages
 	on messages.group_id = latest_messages.group_id
 	and messages.created_at = latest_messages.max_created_at
-	join users on messages.sender_id = users.id
+	left join users on messages.sender_id = users.id
 	join groups on messages.group_id = groups.id
-	join group_user on group_user.user_id = messages.sender_id and group_user.group_id = groups.id
+	left join group_user on group_user.user_id = messages.sender_id 
+	and group_user.group_id = groups.id
 	where groups.id in (
-		select distinct group_user.group_id 
-		from group_user 
-		where group_user.user_id = ? and group_user.user_id
+    	select distinct group_user.group_id 
+    	from group_user 
+    	where group_user.user_id = ? 
 	)
-	order by message_created_at desc limit 15 offset `+strconv.Itoa(offset)+`
+	and users.id is not null
+	order by message_created_at desc 
+	limit `+strconv.Itoa(perPage)+` offset `+strconv.Itoa(offset)+`
 	`, userID).Find(&data).Error
 
 	var privateMessageIDs []uint
