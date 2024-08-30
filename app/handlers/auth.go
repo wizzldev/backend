@@ -97,9 +97,7 @@ func (auth) Logout(c *fiber.Ctx) error {
 		return err
 	}
 
-	database.DB.Delete(&models.Session{
-		SessionID: sess.ID(),
-	})
+	database.DB.Where("session_id = ?", sess.ID()).Delete(&models.Session{})
 
 	return sess.Destroy()
 }
@@ -146,7 +144,7 @@ func (auth) VerifyEmail(c *fiber.Ctx) error {
 		return err
 	}
 
-	database.DB.Delete(&models.EmailVerification{Token: token})
+	database.DB.Where("token = ?", token).Delete(&models.EmailVerification{})
 
 	return c.JSON(fiber.Map{
 		"message": "Password has been updated successfully",
@@ -194,7 +192,7 @@ func (auth) SetNewPassword(c *fiber.Ctx) error {
 	user.Password = pass
 	database.DB.Save(&user)
 
-	database.DB.Delete(&models.ResetPassword{Token: token})
+	database.DB.Where("token = ?", token).Delete(&models.ResetPassword{})
 
 	return c.JSON(fiber.Map{
 		"message": "Password has been updated successfully",
