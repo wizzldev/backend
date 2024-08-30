@@ -10,5 +10,5 @@ type groupUser struct{}
 var GroupUser groupUser
 
 func (groupUser) Delete(groupID uint, userID uint) {
-	database.DB.Model(&models.GroupUser{}).Delete("group_id = ? and user_id = ?", groupID, userID)
+	database.DB.Where("group_id = ? and user_id = ?", groupID, userID).Delete(&models.GroupUser{})
 }
