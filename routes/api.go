@@ -32,7 +32,8 @@ func RegisterAPI(r fiber.Router) {
 		auth.Put("/me", middlewares.NoBots, requests.Use[requests.UpdateMe](), middlewares.NewSimpleLimiter(3, 10*time.Minute, "Too many modifications, try again later"), handlers.Me.Update)
 		auth.Get("/me/ip-check", handlers.Me.SwitchIPCheck)
 		auth.Post("/me/profile-image", middlewares.NoBots, handlers.Me.UploadProfileImage)
-		auth.Delete("/me", middlewares.NoBots, handlers.Me.Delete)
+		// wait a week before deletion
+		// auth.Delete("/me", middlewares.NoBots, handlers.Me.Delete)
 	}
 
 	mobile := r.Group("/mobile", middlewares.NoBots)
