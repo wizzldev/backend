@@ -17,7 +17,7 @@ func (i *invite) CreateCode() string {
 	rand := utils.NewRandom()
 
 	var (
-		key    = rand.String(10)
+		key    = rand.String(6)
 		trials = 0.0
 	)
 
@@ -29,7 +29,7 @@ func (i *invite) CreateCode() string {
 			times = 2
 		}
 
-		key = rand.String(10 * times)
+		key = rand.String(6 * times)
 	}
 	i.mu.Unlock()
 
