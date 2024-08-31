@@ -86,7 +86,8 @@ func RegisterAPI(r fiber.Router) {
 		chat.Use(HandleNotFoundError)
 	}
 
-	auth.Get("/invite/:code", handlers.Invite.Use)
+	auth.Get("/invite/:code", handlers.Invite.Describe)
+	auth.Get("/invite/:code/use", handlers.Invite.Use)
 
 	// bot := r.Group("/bots", middlewares.Auth)
 	{
