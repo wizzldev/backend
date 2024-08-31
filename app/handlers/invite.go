@@ -46,6 +46,22 @@ func (*invite) Create(c *fiber.Ctx) error {
 	return c.JSON(i)
 }
 
+func (i *invite) Describe(c *fiber.Ctx) error {
+	userID := authUserID(c)
+	groupID, err := i.getGroupID(c.Params("code", ""), userID)
+	if err != nil {
+		return err
+	}
+
+	gr := repository.Group.Find(groupID)
+
+	if gr.ID == 0 {
+		return fiber.ErrNotFound
+	}
+
+	return c.JSON(gr)
+}
+
 func (i *invite) Use(c *fiber.Ctx) error {
 	userID := authUserID(c)
 
