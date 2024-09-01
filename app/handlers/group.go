@@ -100,6 +100,7 @@ func (*group) GetInfo(c *fiber.Ctx) error {
 		"custom_invite":      g.CustomInvite,
 		"emoji":              g.Emoji,
 		"your_roles":         repository.Group.GetUserRoles(g.ID, userID, *role.NewRoles(g.Roles)),
+		"theme_id":           g.ThemeID,
 	})
 }
 
@@ -279,7 +280,9 @@ func (g *group) Delete(c *fiber.Ctx) error {
 }
 
 func (g *group) Emoji(c *fiber.Ctx) error {
-	gr, err := g.group(c.Params("id"))
+	serverID := c.Params("id")
+
+	gr, err := g.group(serverID)
 	if err != nil {
 		return err
 	}
@@ -287,6 +290,16 @@ func (g *group) Emoji(c *fiber.Ctx) error {
 	data := validation[requests.Emoji](c)
 	gr.Emoji = &data.Emoji
 	database.DB.Save(gr)
+
+	userIDs := g.sendMessage(g.Cache, gr.ID, authUser(c), &ws.ClientMessage{
+		Type:     "emoji.update",
+		DataJSON: "{}",
+	})
+
+	events.SendToGroup(serverID, userIDs, ws.Message{
+		Event: "reload",
+		Data:  nil,
+	})
 
 	return c.JSON(fiber.Map{
 		"status": "ok",
@@ -316,4 +329,62 @@ func (g *group) UserCount(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"count": repository.Group.UserCount(uint(gID)),
 	})
+}
+
+func (g *group) SetTheme(c *fiber.Ctx) error {
+	serverID := c.Params("id")
+	gr, err := g.group(serverID)
+	if err != nil {
+		return err
+	}
+
+	themeID, err := c.ParamsInt("themeID")
+	if err != nil {
+		return err
+	}
+
+	th := repository.Theme.Find(uint(themeID))
+
+	if th.ID < 1 {
+		return fiber.ErrNotFound
+	}
+
+	gr.ThemeID = &th.ID
+	database.DB.Save(&gr)
+
+	userIDs := g.sendMessage(g.Cache, gr.ID, authUser(c), &ws.ClientMessage{
+		Type:     "theme.update",
+		DataJSON: "{}",
+	})
+
+	events.SendToGroup(serverID, userIDs, ws.Message{
+		Event: "reload",
+		Data:  nil,
+	})
+
+	return c.JSON(gr)
+}
+
+func (g *group) RemoveTheme(c *fiber.Ctx) error {
+	serverID := c.Params("id")
+	gr, err := g.group(serverID)
+	if err != nil {
+		return err
+	}
+
+	gr.ThemeID = nil
+	gr.Theme = nil
+	database.DB.Save(&gr)
+
+	userIDs := g.sendMessage(g.Cache, gr.ID, authUser(c), &ws.ClientMessage{
+		Type:     "theme.update",
+		DataJSON: "{}",
+	})
+
+	events.SendToGroup(serverID, userIDs, ws.Message{
+		Event: "reload",
+		Data:  nil,
+	})
+
+	return c.JSON(gr)
 }
