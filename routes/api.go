@@ -57,6 +57,7 @@ func RegisterAPI(r fiber.Router) {
 		users.Use(HandleNotFoundError)
 	}
 
+	auth.Get("/themes", handlers.Theme.Paginate)
 	auth.Get("/chat/contacts", handlers.Chat.Contacts)
 	auth.Get("/chat/user/:id<int>", middlewares.GroupAccess("id"), handlers.Group.GetInfo)
 	auth.Get("/chat/private/:id<int>", handlers.Chat.PrivateMessage)
@@ -83,6 +84,10 @@ func RegisterAPI(r fiber.Router) {
 
 		chat.Get("/users", handlers.Group.Users)
 		chat.Get("/user_count", handlers.Group.UserCount)
+
+		chat.Put("/theme/:themeID", middlewares.NewRoleMiddleware(role.EditGroupTheme), handlers.Group.SetTheme)
+		chat.Delete("/theme", middlewares.NewRoleMiddleware(role.EditGroupTheme), handlers.Group.RemoveTheme)
+
 		chat.Use(HandleNotFoundError)
 	}
 
