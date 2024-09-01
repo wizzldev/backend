@@ -50,9 +50,13 @@ func (*group) New(c *fiber.Ctx) error {
 
 	userID := authUserID(c)
 
+	var (
+		img  = configs.DefaultGroupImage
+		name = data.Name
+	)
 	g := models.Group{
-		ImageURL:         configs.DefaultGroupImage,
-		Name:             data.Name,
+		ImageURL:         &img,
+		Name:             &name,
 		Roles:            roles,
 		IsPrivateMessage: false,
 		Users:            users,
@@ -125,11 +129,13 @@ func (g *group) UploadGroupImage(c *fiber.Ctx) error {
 	}
 
 	// FIX: firstly delete the image then save the new
-	if gr.ImageURL != configs.DefaultGroupImage {
-		_ = g.Storage.RemoveByDisc(strings.SplitN(gr.ImageURL, ".", 2)[0])
+	img := *gr.ImageURL
+	if img != configs.DefaultGroupImage {
+		_ = g.Storage.RemoveByDisc(strings.SplitN(img, ".", 2)[0])
 	}
 
-	gr.ImageURL = file.Discriminator + ".webp"
+	img = file.Discriminator + ".webp"
+	gr.ImageURL = &img
 	database.DB.Save(gr)
 
 	g.sendMessage(g.Cache, gr.ID, authUser(c), &ws.ClientMessage{
@@ -191,7 +197,7 @@ func (g *group) EditName(c *fiber.Ctx) error {
 	}
 
 	data := validation[requests.EditGroupName](c)
-	gr.Name = data.Name
+	gr.Name = &data.Name
 	database.DB.Save(gr)
 
 	g.sendMessage(g.Cache, gr.ID, authUser(c), &ws.ClientMessage{
@@ -259,8 +265,9 @@ func (g *group) Delete(c *fiber.Ctx) error {
 		return err
 	}
 
-	if gr.ImageURL != configs.DefaultGroupImage {
-		_ = g.Storage.RemoveByDisc(strings.SplitN(gr.ImageURL, ".", 2)[0])
+	img := *gr.ImageURL
+	if img != configs.DefaultGroupImage {
+		_ = g.Storage.RemoveByDisc(strings.SplitN(img, ".", 2)[0])
 	}
 
 	g.sendMessage(g.Cache, gr.ID, authUser(c), &ws.ClientMessage{

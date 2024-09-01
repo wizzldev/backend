@@ -106,9 +106,10 @@ func (*chat) Find(c *fiber.Ctx) error {
 	var isYourProfile = false
 
 	g := repository.Group.GetChatUser(uint(id), authUserID(c))
-	if g.ImageURL == "" && g.Name == "" {
-		g.ImageURL = user.ImageURL
-		g.Name = "You#allowTranslation"
+	if g.ImageURL == nil && g.Name == nil {
+		g.ImageURL = &user.ImageURL
+		gName := "You#allowTranslation"
+		g.Name = &gName
 		isYourProfile = true
 	}
 
