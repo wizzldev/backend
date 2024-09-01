@@ -121,7 +121,7 @@ func (group) GetContactsForUser(userID uint, page int, authUser *models.User) *[
 	) as latest_messages
 	on messages.group_id = latest_messages.group_id
 	and messages.created_at = latest_messages.max_created_at
-	left join users on messages.sender_id = users.id
+	left join users on messages.sender_id = users.id and users.is_bot = 0
 	join groups on messages.group_id = groups.id
 	left join group_user on group_user.user_id = messages.sender_id 
 	and group_user.group_id = groups.id
@@ -241,9 +241,10 @@ func (group) GetChatUser(chatID uint, userID uint) *models.Group {
 		where group_id = ? and users.id != ?
 		limit 1
 		`, data.ID, userID).Scan(&user).Error
-		data.ImageURL = user.ImageURL
+		data.ImageURL = &user.ImageURL
 		if user.ID > 0 {
-			data.Name = fmt.Sprintf("%s %s", user.FirstName, user.LastName)
+			name := fmt.Sprintf("%s %s", user.FirstName, user.LastName)
+			data.Name = &name
 		}
 	}
 
