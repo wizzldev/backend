@@ -1,7 +1,18 @@
 services:
+  database:
+    image: 'mysql:latest'
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'api'
+      MYSQL_ROOT_PASSWORD: 'password'
+  redis:
+    image: 'redis:latest'
   api:
     build: .
     restart: always
+    depends_on:
+      - database
+      - redis
     volumes:
       - ./storage:/app/storage
       - ./templates/:/app/templates
