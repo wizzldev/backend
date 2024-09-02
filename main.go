@@ -1,10 +1,12 @@
 package main
 
 import (
+	"flag"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/wizzldev/chat/database"
+	"github.com/wizzldev/chat/database/rdb"
 	"github.com/wizzldev/chat/pkg/configs"
 	"github.com/wizzldev/chat/pkg/middlewares"
 	"github.com/wizzldev/chat/routes"
@@ -12,12 +14,16 @@ import (
 )
 
 func main() {
-	err := configs.LoadEnv()
+	envFile := flag.String("env", ".env", "dotenv file to load")
+	flag.Parse()
+
+	err := configs.LoadEnv(*envFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	database.MustConnect()
+	rdb.MustConnect()
 
 	app := fiber.New(fiber.Config{
 		ErrorHandler:       routes.ErrorHandler,
