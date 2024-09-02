@@ -1,26 +1,18 @@
 package rdb
 
 import (
-	"fmt"
 	"github.com/gofiber/storage/redis/v3"
-	client "github.com/redis/go-redis/v9"
-	"github.com/wizzldev/chat/pkg/configs"
+	"os"
 )
 
-var Redis *redis.Storage
+var Redis = redis.New(redis.Config{
+	URL: getURL(),
+})
 
-var RedisClient client.UniversalClient
-
-func MustConnect() {
-	fmt.Printf("Connecting to redis via %s:%d", configs.Env.Redis.Host, configs.Env.Redis.Port)
-
-	Redis = redis.New(redis.Config{
-		Host:     configs.Env.Redis.Host,
-		Port:     configs.Env.Redis.Port,
-		Username: configs.Env.Redis.User,
-		Password: configs.Env.Redis.Password,
-		Database: configs.Env.Redis.DB,
-	})
-
-	RedisClient = Redis.Conn()
+func getURL() string {
+	url := os.Getenv("REDIS_URL")
+	if url == "" {
+		return "redis://:@127.0.0.1:6379/0"
+	}
+	return url
 }

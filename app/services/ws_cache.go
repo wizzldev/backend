@@ -23,14 +23,14 @@ func NewWSCache() *WSCache {
 func (w WSCache) GetUser(userID uint) (*models.User, error) {
 	key := w.key(fmt.Sprintf("user:%d", userID))
 
-	userStr, err := rdb.RedisClient.Get(ctx, key).Result()
+	userByte, err := rdb.Redis.Get(key)
 	if err != nil {
 		return w.getAndSaveUser(userID, key)
 	}
 
 	var user models.User
 
-	if err := json.Unmarshal([]byte(userStr), &user); err != nil {
+	if err := json.Unmarshal(userByte, &user); err != nil {
 		return w.getAndSaveUser(userID, key)
 	}
 
@@ -44,20 +44,20 @@ func (WSCache) getAndSaveUser(userID uint, key string) (*models.User, error) {
 		return nil, err
 	}
 
-	rdb.RedisClient.Set(ctx, key, data, time.Minute*20)
+	_ = rdb.Redis.Set(key, data, time.Minute*20)
 	return user, nil
 }
 
 func (w WSCache) GetGroupMemberIDs(groupID string) []uint {
 	key := w.key(fmt.Sprintf("group.%v.userIds", groupID))
 
-	gIDsStr, err := rdb.RedisClient.Get(ctx, key).Result()
+	gIDsByte, err := rdb.Redis.Get(key)
 	if err != nil {
 		return w.getAndSaveGroupIDs(groupID, key)
 	}
 
 	var gIDs []uint
-	if err := json.Unmarshal([]byte(gIDsStr), &gIDs); err != nil {
+	if err := json.Unmarshal(gIDsByte, &gIDs); err != nil {
 		return w.getAndSaveGroupIDs(groupID, key)
 	}
 
@@ -78,20 +78,20 @@ func (WSCache) getAndSaveGroupIDs(groupID string, key string) []uint {
 		return uIDs
 	}
 
-	rdb.RedisClient.Set(ctx, key, data, time.Minute*20)
+	_ = rdb.Redis.Set(key, data, time.Minute*20)
 	return uIDs
 }
 
 func (w WSCache) GetRoles(userID uint, groupID uint) role.Roles {
 	key := w.key(fmt.Sprintf("roles.user:%d.%d", userID, groupID))
 
-	roleStr, err := rdb.RedisClient.Get(ctx, key).Result()
+	roleByte, err := rdb.Redis.Get(key)
 	if err != nil {
 		return w.getAndSaveUserRoles(userID, groupID, key)
 	}
 
 	var roles []string
-	if err = json.Unmarshal([]byte(roleStr), &roles); err != nil {
+	if err = json.Unmarshal(roleByte, &roles); err != nil {
 		return w.getAndSaveUserRoles(userID, groupID, key)
 	}
 
@@ -100,20 +100,20 @@ func (w WSCache) GetRoles(userID uint, groupID uint) role.Roles {
 
 func (w WSCache) getAndSaveUserRoles(userID uint, groupID uint, key string) role.Roles {
 	roles := repository.Group.GetUserRoles(groupID, userID, w.GetGroupRoles(groupID))
-	rdb.RedisClient.Set(ctx, key, roles.String(), time.Minute*20)
+	_ = rdb.Redis.Set(key, []byte(roles.String()), time.Minute*20)
 	return roles
 }
 
 func (w WSCache) GetGroupRoles(groupID uint) role.Roles {
 	key := w.key(fmt.Sprintf("roles.group:%d", groupID))
 
-	gIDsStr, err := rdb.RedisClient.Get(ctx, key).Result()
+	gIDsByte, err := rdb.Redis.Get(key)
 	if err != nil {
 		return *w.getAndSaveGroupRoles(groupID, key)
 	}
 
 	var roles []string
-	if err := json.Unmarshal([]byte(gIDsStr), &roles); err != nil {
+	if err := json.Unmarshal(gIDsByte, &roles); err != nil {
 		return *w.getAndSaveGroupRoles(groupID, key)
 	}
 
@@ -128,7 +128,7 @@ func (WSCache) getAndSaveGroupRoles(groupID uint, key string) *role.Roles {
 
 	roles := role.NewRoles(group.Roles)
 
-	rdb.RedisClient.Set(ctx, key, roles.String(), time.Minute*20)
+	_ = rdb.Redis.Set(key, []byte(roles.String()), time.Minute*20)
 
 	return roles
 }
