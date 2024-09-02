@@ -5,14 +5,23 @@ services:
     environment:
       MYSQL_DATABASE: 'api'
       MYSQL_ROOT_PASSWORD: 'password'
-  redis:
+    volumes:
+      - ./mysql-volume:/var/lib/mysql
+  cache:
     image: 'redis:latest'
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 1s
+      timeout: 2s
+      retries: 10
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
   api:
     build: .
     restart: always
     depends_on:
-      - database
-      - redis
+      cache:
+        condition: service_healthy
     volumes:
       - ./storage:/app/storage
       - ./templates/:/app/templates
