@@ -6,7 +6,6 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/wizzldev/chat/database"
-	"github.com/wizzldev/chat/database/rdb"
 	"github.com/wizzldev/chat/pkg/configs"
 	"github.com/wizzldev/chat/pkg/middlewares"
 	"github.com/wizzldev/chat/routes"
@@ -23,7 +22,6 @@ func main() {
 	}
 
 	database.MustConnect()
-	rdb.MustConnect()
 
 	app := fiber.New(fiber.Config{
 		ErrorHandler:       routes.ErrorHandler,

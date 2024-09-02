@@ -7,7 +7,7 @@ services:
       MYSQL_ROOT_PASSWORD: 'password'
     volumes:
       - ./mysql-volume:/var/lib/mysql
-  cache:
+  redis:
     image: 'redis:latest'
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
@@ -20,10 +20,12 @@ services:
     build: .
     restart: always
     depends_on:
-      cache:
+      redis:
         condition: service_healthy
     volumes:
       - ./storage:/app/storage
       - ./templates/:/app/templates
     ports:
       - '3000:3000'
+    environment:
+      - REDIS_URL=redis://:redis:6379/0
