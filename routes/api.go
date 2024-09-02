@@ -88,6 +88,9 @@ func RegisterAPI(r fiber.Router) {
 		chat.Put("/theme/:themeID", middlewares.NewRoleMiddleware(role.EditGroupTheme), handlers.Group.SetTheme)
 		chat.Delete("/theme", middlewares.NewRoleMiddleware(role.EditGroupTheme), handlers.Group.RemoveTheme)
 
+		chat.Post("/nickname/:userID", middlewares.NewRoleMiddleware(role.Admin), requests.Use[requests.Nickname](), handlers.GroupUser.EditNickName)
+		chat.Delete("/nickname/:userID", middlewares.NewRoleMiddleware(role.Admin), handlers.GroupUser.RemoveNickName)
+
 		chat.Use(HandleNotFoundError)
 	}
 
