@@ -14,4 +14,4 @@ COPY . .
 
 ENV CGO_ENABLED = 1
 RUN go build -o wizzl
-CMD ["./wizzl", "-"]
+CMD ["./wizzl", "--env", ".env.example"]
