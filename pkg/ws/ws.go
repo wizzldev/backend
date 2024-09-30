@@ -1,12 +1,12 @@
 package ws
 
 import (
+	"sync"
+
 	"github.com/gofiber/contrib/websocket"
 	"github.com/wizzldev/chat/pkg/configs"
 	"github.com/wizzldev/chat/pkg/logger"
 	"github.com/wizzldev/chat/pkg/utils"
-	"slices"
-	"sync"
 )
 
 var MessageHandler func(conn *Connection, userID uint, message []byte) error
@@ -15,7 +15,7 @@ var WebSocket *Server
 
 type Server struct {
 	Pool []*Connection
-	mu   sync.Mutex
+	mu   sync.RWMutex
 }
 
 type BroadcastFunc func(*Connection) bool
@@ -30,13 +30,14 @@ func Init() *Server {
 
 func NewServer() *Server {
 	return &Server{
-		Pool: []*Connection{},
+		Pool: make([]*Connection, 0, 100),
 	}
 }
 
 func (s *Server) AddConnection(ws *websocket.Conn) {
 	conn := NewConnection("", ws, ws.Locals(configs.LocalAuthUserID).(uint))
 	defer conn.Disconnect()
+
 	conn.Send(MessageWrapper{
 		Message: &Message{
 			Event:  "connection",
@@ -45,7 +46,10 @@ func (s *Server) AddConnection(ws *websocket.Conn) {
 		},
 		Resource: configs.DefaultWSResource,
 	})
+
+	s.mu.Lock()
 	s.Pool = append(s.Pool, conn)
+	s.mu.Unlock()
 
 	if configs.Env.Debug {
 		logger.WSNewConnection("", conn.IP(), conn.UserID)
@@ -57,43 +61,83 @@ func (s *Server) AddConnection(ws *websocket.Conn) {
 }
 
 func (s *Server) Broadcast(m MessageWrapper) {
+	s.mu.RLock() // Read lock since we aren't modifying the pool
+	defer s.mu.RUnlock()
+
+	var wg sync.WaitGroup
 	for _, conn := range s.Pool {
 		if conn.Connected {
-			conn.Send(m)
+			wg.Add(1)
+			go func(c *Connection) {
+				defer wg.Done()
+				c.Send(m)
+			}(conn)
 		}
 	}
+	wg.Wait() // Wait for all goroutines to finish sending
 }
 
 func (s *Server) BroadcastFunc(f BroadcastFunc, m MessageWrapper) {
+	s.mu.RLock() // Read lock
+	defer s.mu.RUnlock()
+
+	var wg sync.WaitGroup
 	for _, conn := range s.Pool {
 		if conn.Connected && f(conn) {
-			conn.Send(m)
+			wg.Add(1)
+			go func(c *Connection) {
+				defer wg.Done()
+				c.Send(m)
+			}(conn)
 		}
 	}
+	wg.Wait() // Wait for all goroutines to finish
 }
 
 func (s *Server) BroadcastToUsers(userIDs []uint, id string, m Message) []uint {
+	userIDMap := make(map[uint]struct{}, len(userIDs))
+	for _, id := range userIDs {
+		userIDMap[id] = struct{}{}
+	}
+
 	var sentTo []uint
+	s.mu.RLock() // Read lock
+	defer s.mu.RUnlock()
+
+	var wg sync.WaitGroup
+	mu := sync.Mutex{} // Mutex to safely append to sentTo
 	for _, conn := range s.Pool {
-		if slices.Contains(userIDs, conn.UserID) && conn.Connected {
-			conn.Send(MessageWrapper{
-				Message:  &m,
-				Resource: id,
-			})
-			sentTo = append(sentTo, conn.UserID)
+		if _, exists := userIDMap[conn.UserID]; exists && conn.Connected {
+			wg.Add(1)
+			go func(c *Connection) {
+				defer wg.Done()
+				c.Send(MessageWrapper{
+					Message:  &m,
+					Resource: id,
+				})
+				mu.Lock()
+				sentTo = append(sentTo, c.UserID)
+				mu.Unlock()
+			}(conn)
 		}
 	}
+	wg.Wait()
 	return sentTo
 }
 
 func (s *Server) Remove(c *Connection) {
-	s.LogPoolSize()
+	s.mu.Lock()
 	s.Pool = utils.RemoveFromSlice(s.Pool, c)
+	s.mu.Unlock()
+
 	s.LogPoolSize()
 }
 
 func (s *Server) GetUserIDs() []uint {
-	var userIDs []uint
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	userIDs := make([]uint, 0, len(s.Pool))
 	for _, conn := range s.Pool {
 		userIDs = append(userIDs, conn.UserID)
 	}
@@ -101,5 +145,6 @@ func (s *Server) GetUserIDs() []uint {
 }
 
 func (s *Server) LogPoolSize() {
-	logger.WSPoolSize("", len(s.Pool), s.GetUserIDs())
+	userIDs := s.GetUserIDs()
+	logger.WSPoolSize("", len(s.Pool), userIDs)
 }

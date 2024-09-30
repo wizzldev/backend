@@ -1,6 +1,11 @@
 package handlers
 
 import (
+	"fmt"
+	"slices"
+	"strconv"
+	"strings"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/lib/pq"
 	"github.com/wizzldev/chat/app/events"
@@ -12,9 +17,6 @@ import (
 	"github.com/wizzldev/chat/pkg/repository"
 	"github.com/wizzldev/chat/pkg/utils/role"
 	"github.com/wizzldev/chat/pkg/ws"
-	"slices"
-	"strconv"
-	"strings"
 )
 
 type group struct {
@@ -394,4 +396,43 @@ func (g *group) RemoveTheme(c *fiber.Ctx) error {
 	})
 
 	return c.JSON(gr)
+}
+
+func (g *group) InviteApplication(c *fiber.Ctx) error {
+	request := validation[requests.ApplicationInvite](c)
+	bot := repository.Bot.FindByID(request.BotID)
+	if !bot.Exists() {
+		return fiber.NewError(fiber.StatusBadRequest, "No bot exists with that id")
+	}
+
+	gr := repository.Group.Find(request.GroupID)
+	if !gr.Exists() {
+		return fiber.ErrNotFound
+	}
+
+	userID := authUserID(c)
+
+	var roles role.Roles
+	if gr.UserID == userID {
+		roles = *role.All()
+	} else {
+		roles = repository.Group.GetUserRoles(uint(request.GroupID), userID, *role.NewRoles(gr.Roles))
+	}
+
+	if !roles.Can(role.CreateIntegration) {
+		return fiber.NewError(fiber.StatusForbidden, "You are not allowed to access this resource")
+	}
+
+	if !repository.Group.IsGroupUserExists(gr.ID, bot.ID) {
+		database.DB.Create(&models.GroupUser{
+			HasUser:  models.HasUserID(bot.ID),
+			HasGroup: models.HasGroupID(gr.ID),
+		})
+
+		g.Cache.DisposeGroupMemberIDs(fmt.Sprint(gr.ID))
+	}
+
+	return c.JSON(fiber.Map{
+		"status": "success",
+	})
 }
