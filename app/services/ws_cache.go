@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"time"
+
 	"github.com/wizzldev/chat/database/models"
 	"github.com/wizzldev/chat/database/rdb"
 	"github.com/wizzldev/chat/pkg/repository"
 	"github.com/wizzldev/chat/pkg/utils/role"
-	"strconv"
-	"time"
 )
 
 var ctx = context.Background()
@@ -62,6 +63,11 @@ func (w WSCache) GetGroupMemberIDs(groupID string) []uint {
 	}
 
 	return gIDs
+}
+
+func (w WSCache) DisposeGroupMemberIDs(groupID string) error {
+	key := w.key(fmt.Sprintf("group.%v.userIds", groupID))
+	return rdb.Redis.Delete(key)
 }
 
 func (WSCache) getAndSaveGroupIDs(groupID string, key string) []uint {
