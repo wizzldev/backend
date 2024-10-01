@@ -1,13 +1,14 @@
 package middlewares
 
 import (
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
 	"net/url"
 	"slices"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
-var corsOriginDomains = []string{"wizzl.app", "localhost"}
+var corsOriginDomains = []string{"wizzl.app", "dev.wizzl.app", "localhost"}
 
 func CORS() fiber.Handler {
 	return cors.New(cors.Config{

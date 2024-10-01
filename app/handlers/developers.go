@@ -55,7 +55,8 @@ func (developers) CreateApplication(c *fiber.Ctx) error {
 	database.DB.Create(&botUser)
 
 	return c.JSON(fiber.Map{
-		"token": token,
+		"application_id": bot.ID,
+		"token":          token,
 	})
 }
 
@@ -77,6 +78,7 @@ func (developers) RegenerateApplicationToken(c *fiber.Ctx) error {
 	bot.Password = token
 
 	return c.JSON(fiber.Map{
-		"token": token,
+		"application_id": bot.ID,
+		"token":          token,
 	})
 }

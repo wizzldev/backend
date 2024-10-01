@@ -10,5 +10,5 @@ func RegisterBot(r fiber.Router) {
 		return c.JSON(fiber.Map{
 			"success": true,
 		})
-	})
+	}).Name("auth")
 }
