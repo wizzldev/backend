@@ -13,8 +13,8 @@ import (
 type User struct {
 	Base
 	FirstName       string     `json:"first_name" gorm:"type:varchar(100)"`
-	LastName        string     `json:"last_name" gorm:"type:varchar(100)"`
-	Email           string     `json:"email" gorm:"type:varchar(100)"`
+	LastName        string     `json:"last_name,omitempty" gorm:"type:varchar(100)"`
+	Email           string     `json:"email,omitempty" gorm:"type:varchar(100)"`
 	Password        string     `json:"-" gorm:"type:varchar(255)"`
 	ImageURL        string     `json:"image_url" gorm:"type:varchar(255)"`
 	EmailVerifiedAt *time.Time `json:"-"`

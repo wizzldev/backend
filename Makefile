@@ -5,6 +5,12 @@ env:
 buildID:
 	git show -s --format='{"build": "%h", "date": "%cD", "author": "%an" }' > ./pkg/configs/build.json
 
+build: buildID
+	@go build -o ./bin/wizzl
+
+run: build
+	@./bin/wizzl
+
 # handler makes a new handler inside the handlers folder to speed up things
 handler:
 	@if [ -z "$(name)" ]; then \

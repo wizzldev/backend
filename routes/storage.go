@@ -7,12 +7,12 @@ import (
 )
 
 func RegisterStorage(r fiber.Router) {
-	file := r.Group("/files")
-	file.Get("/:disc/:filename", middlewares.StorageFileToLocal(), middlewares.StorageFilePermission(), handlers.Files.Get)
-	file.Get("/:disc/:filename/info", middlewares.StorageFileToLocal(), middlewares.StorageFilePermission(), handlers.Files.GetInfo)
+	file := r.Group("/files").Name("files.")
+	file.Get("/:disc/:filename", middlewares.StorageFileToLocal(), middlewares.StorageFilePermission(), handlers.Files.Get).Name("file")
+	file.Get("/:disc/:filename/info", middlewares.StorageFileToLocal(), middlewares.StorageFilePermission(), handlers.Files.GetInfo).Name("info")
 	file.Use(HandleNotFoundError)
 
-	avatar := r.Group("/avatars")
+	avatar := r.Group("/avatars").Name("avatars.")
 	avatar.Post("/upload", func(c *fiber.Ctx) error {
 		fh, err := c.FormFile("image")
 		if err != nil {
@@ -23,9 +23,9 @@ func RegisterStorage(r fiber.Router) {
 			return err
 		}
 		return c.SendString(f.Discriminator)
-	})
-	avatar.Get("/:disc-s:size<int>.webp", middlewares.StorageFileToLocal(), handlers.Files.GetAvatar)
-	avatar.Get("/:disc.webp", middlewares.StorageFileToLocal(), handlers.Files.GetAvatar)
+	}).Name("upload")
+	avatar.Get("/:disc-s:size<int>.webp", middlewares.StorageFileToLocal(), handlers.Files.GetAvatar).Name("with-size")
+	avatar.Get("/:disc.webp", middlewares.StorageFileToLocal(), handlers.Files.GetAvatar).Name("simple")
 	avatar.Use(HandleNotFoundError)
 
 	r.Use(HandleNotFoundError)
