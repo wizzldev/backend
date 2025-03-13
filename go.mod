@@ -1,6 +1,7 @@
 module github.com/wizzldev/chat
 
 go 1.21.7
+toolchain go1.23.7
 
 require (
 	firebase.google.com/go v3.13.0+incompatible
@@ -15,9 +16,9 @@ require (
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/stretchr/testify v1.9.0
 	github.com/tmdvs/Go-Emoji-Utils v1.1.0
-	golang.org/x/crypto v0.25.0
-	golang.org/x/net v0.27.0
-	golang.org/x/text v0.16.0
+	golang.org/x/crypto v0.35.0
+	golang.org/x/net v0.36.0
+	golang.org/x/text v0.22.0
 	google.golang.org/api v0.189.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gorm.io/driver/mysql v1.5.6
@@ -75,8 +76,8 @@ require (
 	go.opentelemetry.io/otel/metric v1.24.0 // indirect
 	go.opentelemetry.io/otel/trace v1.24.0 // indirect
 	golang.org/x/oauth2 v0.21.0 // indirect
-	golang.org/x/sync v0.7.0 // indirect
-	golang.org/x/sys v0.22.0 // indirect
+	golang.org/x/sync v0.11.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto v0.0.0-20240722135656-d784300faade // indirect
